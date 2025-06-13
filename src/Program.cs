@@ -26,9 +26,16 @@ public class Program
         try
         {
             var device = DeviceHelper.SelectDevice();
+            DeviceHelper.OpenDevice(device);
             var mac = PacketBuilder.GetMacFromIP(device, ip);
+
+            // add : on the mac address
             var macString = string.Join(":", mac.GetAddressBytes().Select(b => b.ToString("X2")));
             Console.WriteLine($"MAC address for {ip}: {macString}");
+
+            PacketBuilder.SendSynPacket(device, ip, 80);
+
+            device.Close();
         }
         catch (Exception ex)
         {
