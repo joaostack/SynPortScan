@@ -16,6 +16,25 @@ public class Program
     {
         Console.WriteLine("SynPortScan is a SYN port scanner.");
 
-        PacketBuilder.GetMacFromIP(null, ip);
+        if (string.IsNullOrEmpty(ip))
+        {
+            Console.WriteLine("Usage: SynPortScan -h");
+            return;
+        }
+
+        try
+        {
+            var device = DeviceHelper.SelectDevice();
+            PacketBuilder.GetMacFromIP(device, ip);
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            Console.ResetColor();
+        }
     }
 }
