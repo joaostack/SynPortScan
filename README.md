@@ -1,2 +1,2 @@
 # SynPortScan
-SPS (SynPortScan) is a Syn-Ack port scanner based. 100% coded in C# and SharpPcap Lib.
+For sharppcap students, experminetal project (not work on domains or external hosts, only internal)
