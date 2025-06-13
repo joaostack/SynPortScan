@@ -22,7 +22,7 @@ public static class PacketBuilder
     /// <summary>
     /// Gets the MAC address from the target IP address using ARP request.
     /// </summary>
-    public static string GetMacFromIP(ILiveDevice device, string targetIp)
+    public static PhysicalAddress GetMacFromIP(ILiveDevice device, string targetIp)
     {
         var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
             .FirstOrDefault(a =>
@@ -33,13 +33,13 @@ public static class PacketBuilder
         var localMac = device.MacAddress;
 
         var ethernetPacket = new EthernetPacket(
-            PhysicalAddress.Parse("00-00-00-00-00-00"), // Source MAC (dummy)
+            localMac,
             PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"), // Broadcast MAC
             EthernetType.Arp);
 
         var arpPacket = new ArpPacket(
             ArpOperation.Request,
-            PhysicalAddress.Parse("00-00-00-00-00-00"),
+            localMac,
             IPAddress.Parse(targetIp),
             localMac,
             localIp
@@ -47,7 +47,7 @@ public static class PacketBuilder
 
         ethernetPacket.PayloadPacket = arpPacket;
 
-        string macRes = "";
+        PhysicalAddress macRes = null;
 
         device.Open();
         device.OnPacketArrival += (sender, e) =>
@@ -57,17 +57,17 @@ public static class PacketBuilder
             var arp = packet.Extract<ArpPacket>();
 
             if (eth != null && arp != null &&
-                arp.TargetProtocolAddress.ToString() == targetIp &&
+                arp.SenderProtocolAddress.ToString() == targetIp &&
                 arp.Operation == ArpOperation.Response)
             {
-                macRes = arp.SenderHardwareAddress.ToString();
+                macRes = arp.SenderHardwareAddress;
                 return;
             }
         };
 
         device.SendPacket(ethernetPacket);
         device.StartCapture();
-        Thread.Sleep(2000);
+        Thread.Sleep(1000);
         device.StopCapture();
         device.Close();
 

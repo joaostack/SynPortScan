@@ -1,6 +1,7 @@
 ﻿namespace SynPortScan;
 
 using System;
+using System.Net.NetworkInformation;
 using SynPortScan.Core;
 
 /// <summary>
@@ -26,7 +27,8 @@ public class Program
         {
             var device = DeviceHelper.SelectDevice();
             var mac = PacketBuilder.GetMacFromIP(device, ip);
-            Console.WriteLine($"MAC address for {ip}: {mac}");
+            var macString = string.Join(":", mac.GetAddressBytes().Select(b => b.ToString("X2")));
+            Console.WriteLine($"MAC address for {ip}: {macString}");
         }
         catch (Exception ex)
         {
