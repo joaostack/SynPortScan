@@ -79,6 +79,13 @@ public static class PacketBuilder
     {
         try
         {
+            var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
+                        .FirstOrDefault(a =>
+                            a.Addr.ipAddress != null &&
+                            a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
+                        ?.Addr.ipAddress;
+
+
             var random = new Random();
             var localMac = device.MacAddress;
             var targetMac = GetMacFromIP(device, targetIp);
@@ -88,12 +95,16 @@ public static class PacketBuilder
                 targetMac,
                 EthernetType.IPv4);
 
+            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
+
             var tcpPacket = new TcpPacket(
                 (ushort)random.Next(1024, 65535),
                 (ushort)targetPort
             );
             tcpPacket.Synchronize = true;
-            ethernetPacket.PayloadPacket = tcpPacket;
+
+            ipPacket.PayloadPacket = tcpPacket;
+            ethernetPacket.PayloadPacket = ipPacket;
 
             device.OnPacketArrival += (sender, e) =>
             {
@@ -112,7 +123,7 @@ public static class PacketBuilder
                          tcp.DestinationPort == targetPort &&
                          tcp.Reset)
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Port {targetPort} is closed.");
                 }
                 else if (eth != null && tcp != null &&
@@ -128,7 +139,7 @@ public static class PacketBuilder
 
             device.SendPacket(ethernetPacket);
             device.StartCapture();
-            Thread.Sleep(4000);
+            Thread.Sleep(5000);
             device.StopCapture();
         }
         catch (Exception ex)
