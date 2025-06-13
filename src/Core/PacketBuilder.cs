@@ -49,7 +49,6 @@ public static class PacketBuilder
 
         PhysicalAddress macRes = null;
 
-        device.Open();
         device.OnPacketArrival += (sender, e) =>
         {
             var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
@@ -67,10 +66,74 @@ public static class PacketBuilder
 
         device.SendPacket(ethernetPacket);
         device.StartCapture();
-        Thread.Sleep(1000);
+        Thread.Sleep(2000);
         device.StopCapture();
-        device.Close();
 
-        return macRes ?? throw new InvalidOperationException("MAC address not found for the target IP.");
+        return macRes ?? throw new InvalidOperationException("[GetMacFromIP] MAC address not found for the target IP.");
+    }
+
+    /// <summary>
+    /// Sends a SYN packet to the target IP and port.
+    /// </summary>
+    public static void SendSynPacket(ILiveDevice device, string targetIp, int targetPort)
+    {
+        try
+        {
+            var random = new Random();
+            var localMac = device.MacAddress;
+            var targetMac = GetMacFromIP(device, targetIp);
+
+            var ethernetPacket = new EthernetPacket(
+                localMac,
+                targetMac,
+                EthernetType.IPv4);
+
+            var tcpPacket = new TcpPacket(
+                (ushort)random.Next(1024, 65535),
+                (ushort)targetPort
+            );
+            tcpPacket.Synchronize = true;
+            ethernetPacket.PayloadPacket = tcpPacket;
+
+            device.OnPacketArrival += (sender, e) =>
+            {
+                var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
+                var eth = packet.Extract<EthernetPacket>();
+                var tcp = packet.Extract<TcpPacket>();
+
+                if (eth != null && tcp != null &&
+                    tcp.DestinationPort == targetPort &&
+                    tcp.Synchronize && tcp.Acknowledgment)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"Port {targetPort} is open.");
+                }
+                else if (eth != null && tcp != null &&
+                         tcp.DestinationPort == targetPort &&
+                         tcp.Reset)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"Port {targetPort} is closed.");
+                }
+                else if (eth != null && tcp != null &&
+                           tcp.DestinationPort == targetPort &&
+                           !tcp.Synchronize && !tcp.Reset)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"Port {targetPort} is filtered (no response).");
+                }
+
+                Console.ResetColor();
+            };
+
+            device.SendPacket(ethernetPacket);
+            device.StartCapture();
+            Thread.Sleep(4000);
+            device.StopCapture();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[SendSynPacket] {ex.Message}.");
+        }
     }
 }

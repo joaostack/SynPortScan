@@ -30,4 +30,17 @@ public static class DeviceHelper
 
         return devices[index];
     }
+
+    /// <summary>
+    /// Opens the specified network device in promiscuous mode.
+    /// </summary>
+    public static void OpenDevice(ILiveDevice device)
+    {
+        if (device == null)
+        {
+            throw new ArgumentNullException(nameof(device), "Device cannot be null.");
+        }
+
+        device.Open(DeviceModes.Promiscuous, 1000);
+    }
 }
