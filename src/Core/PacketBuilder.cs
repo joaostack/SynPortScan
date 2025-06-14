@@ -85,10 +85,8 @@ public static class PacketBuilder
                             a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
                         ?.Addr.ipAddress;
 
-
             var random = new Random();
             var localMac = device.MacAddress;
-            //var targetMac = GetMacFromIP(device, targetIp);
 
             var ethernetPacket = new EthernetPacket(
                 localMac,
@@ -110,8 +108,6 @@ public static class PacketBuilder
             ipPacket.PayloadPacket = tcpPacket;
             ethernetPacket.PayloadPacket = ipPacket;
             ethernetPacket.UpdateCalculatedValues();
-
-            //device.Filter = $"tcp and src host {targetIp} and dst port {targetPort}";
 
             device.OnPacketArrival += (object sender, PacketCapture e) => { SearchForPacket(sender, e, targetPort); };
             device.StartCapture();
