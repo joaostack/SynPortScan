@@ -125,6 +125,9 @@ public static class PacketBuilder
         }
     }
 
+    /// <summary>
+    /// Searches for a packet in the capture to determine the port status.
+    /// </summary>
     public static void SearchForPacket(object sender, PacketCapture e, int targetPort)
     {
         var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
