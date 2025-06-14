@@ -95,16 +95,21 @@ public static class PacketBuilder
                 targetMac,
                 EthernetType.IPv4);
 
-            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
+            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp))
+            {
+                TimeToLive = 64,
+            };
 
             var tcpPacket = new TcpPacket(
                 (ushort)random.Next(1024, 65535),
                 (ushort)targetPort
             );
             tcpPacket.Synchronize = true;
+            tcpPacket.SequenceNumber = (uint)random.Next();
 
             ipPacket.PayloadPacket = tcpPacket;
             ethernetPacket.PayloadPacket = ipPacket;
+            ethernetPacket.UpdateCalculatedValues();
 
             device.OnPacketArrival += (sender, e) =>
             {
