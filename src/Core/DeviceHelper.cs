@@ -19,11 +19,13 @@ public static class DeviceHelper
             throw new InvalidOperationException("No devices found. Please connect a network device.");
         }
 
+        Console.WriteLine(new string('-', 50));
         for (int i = 0; i < devices.Count; i++)
         {
             var device = devices[i];
             Console.WriteLine($"{i}: {device.Description} ({device.Name})");
         }
+        Console.WriteLine(new string('-', 50));
 
         Console.Write("Select a device by number: ");
         int index = int.Parse(Console.ReadLine() ?? "0");
