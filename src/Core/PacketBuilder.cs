@@ -106,19 +106,17 @@ public static class PacketBuilder
             var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
 
             var tcpPacket = new TcpPacket(
-                (ushort)random.Next(1024, 65535),
+                (ushort)random.Next(10000, 65535),
                 (ushort)targetPort);
             tcpPacket.Synchronize = true;
             tcpPacket.SequenceNumber = (uint)random.Next();
-            tcpPacket.WindowSize = 8192; // 8 KB
+            tcpPacket.WindowSize = 1024;
 
             // Build packets
+            tcpPacket.UpdateCalculatedValues();
             ipPacket.PayloadPacket = tcpPacket;
             ipPacket.UpdateCalculatedValues();
-            tcpPacket.UpdateCalculatedValues();
-
             ethernetPacket.PayloadPacket = ipPacket;
-            ethernetPacket.UpdateCalculatedValues();
 
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
@@ -128,9 +126,9 @@ public static class PacketBuilder
                 var ip = packet.Extract<IPv4Packet>();
 
                 // debugging...
-                Console.ForegroundColor = ConsoleColor.Cyan;
+                /*Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine($"[DEBUG] Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
-                Console.ResetColor();
+                Console.ResetColor();*/
 
                 if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort &&
                     tcp.Synchronize && tcp.Acknowledgment)
@@ -154,7 +152,7 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            Thread.Sleep(15000);
+            Thread.Sleep(5000);
             device.StopCapture();
         }
         catch (Exception ex)
