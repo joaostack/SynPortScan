@@ -8,13 +8,15 @@ namespace SynPortScan.Commands;
 public class SynPortScanCommands
 {
     private readonly string _ip;
+    private readonly string _port;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SynPortScanCommands"/> class.
     /// </summary>
-    public SynPortScanCommands(string ip)
+    public SynPortScanCommands(string ip, string port)
     {
         _ip = ip;
+        _port = port;
     }
 
     /// <summary>
@@ -31,7 +33,7 @@ public class SynPortScanCommands
             // add : on the mac address
             var macString = string.Join(":", mac.GetAddressBytes().Select(b => b.ToString("X2")));
             Console.WriteLine($"MAC address for {_ip}: {macString}");
-            PacketBuilder.SendSynPacket(device, _ip, 23, mac);
+            PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), mac);
 
             device.Close();
         }

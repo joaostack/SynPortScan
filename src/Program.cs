@@ -14,11 +14,12 @@ public class Program
     /// SynPortScan args.
     /// </summary>
     /// <param name="ip">Target IP</param>
-    static void Main(string ip)
+    /// <param name="port">Target port</param>
+    static void Main(string ip, string port)
     {
         Console.WriteLine("SynPortScan is a SYN port scanner.");
 
-        if (string.IsNullOrEmpty(ip))
+        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(port))
         {
             Console.WriteLine("Usage: SynPortScan -h");
             return;
@@ -26,7 +27,7 @@ public class Program
 
         try
         {
-            var command = new SynPortScanCommands(ip);
+            var command = new SynPortScanCommands(ip, port);
             command.Execute();
         }
         catch (Exception ex)
