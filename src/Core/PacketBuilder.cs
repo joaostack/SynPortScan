@@ -103,19 +103,28 @@ public static class PacketBuilder
                 targetMac,
                 EthernetType.IPv4);
 
-            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
-
             var tcpPacket = new TcpPacket(
-                (ushort)random.Next(10000, 65535),
-                (ushort)targetPort);
+                            (ushort)random.Next(10000, 65535),
+                            (ushort)targetPort);
             tcpPacket.Synchronize = true;
             tcpPacket.SequenceNumber = (uint)random.Next();
-            tcpPacket.WindowSize = 1024;
+            tcpPacket.WindowSize = 65535;
 
-            // Build packets
-            tcpPacket.UpdateCalculatedValues();
+            // random packet
+            byte[] pkt = new byte[200];
+            random.NextBytes(pkt);
+
+            tcpPacket.PayloadData = pkt;
+
+            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
+
             ipPacket.PayloadPacket = tcpPacket;
+
+            // Update checksums
+            tcpPacket.UpdateCalculatedValues();
             ipPacket.UpdateCalculatedValues();
+
+            // Set the Ethernet packet payload to the IP packet
             ethernetPacket.PayloadPacket = ipPacket;
 
             device.OnPacketArrival += (object sender, PacketCapture e) =>
