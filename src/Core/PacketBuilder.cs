@@ -5,6 +5,7 @@ using PacketDotNet;
 using System.Net.NetworkInformation;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 /// <summary>
 /// PacketBuilder class for building and sending packets.
@@ -75,7 +76,7 @@ public static class PacketBuilder
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static void SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationToken ct)
     {
         try
         {
@@ -127,29 +128,35 @@ public static class PacketBuilder
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
 
-                if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort &&
-                    tcp.Synchronize && tcp.Acknowledgment)
+                if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort)
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine($"Port {targetPort} is open.");
-                }
-                else if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort && tcp.Reset)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Port {targetPort} is closed.");
-                }
-                else if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort && !tcp.Synchronize && !tcp.Reset)
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"Port {targetPort} is filtered (no response).");
+                    if (tcp.Synchronize && tcp.Acknowledgment)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"Port {targetPort} is open.");
+                    }
+                    else if (tcp.Reset)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Port {targetPort} is closed.");
+                    }
+                    else if (!tcp.Synchronize && !tcp.Reset)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"Port {targetPort} is filtered (no response).");
+                    }
                 }
 
                 Console.ResetColor();
             };
 
             device.StartCapture();
-            device.SendPacket(ethernetPacket);
-            Thread.Sleep(5000);
+            while (!ct.IsCancellationRequested)
+            {
+                device.SendPacket(ethernetPacket);
+                Console.WriteLine("Packet sent, waiting for response...");
+                await Task.Delay(5000, ct);
+            }
             device.StopCapture();
         }
         catch (Exception ex)
