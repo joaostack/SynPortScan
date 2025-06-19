@@ -28,6 +28,7 @@ public class Program
             return;
         }
 
+        //Check if target is a hostname and convert to IP Address
         if (!IPAddress.TryParse(ip, out var host))
         {
             host = Dns.GetHostAddresses(ip).FirstOrDefault();
