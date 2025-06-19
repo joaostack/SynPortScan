@@ -75,7 +75,7 @@ public static class PacketBuilder
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static void SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress targetMac)
+    public static void SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac)
     {
         try
         {
@@ -100,7 +100,7 @@ public static class PacketBuilder
             // Packets structure
             var ethernetPacket = new EthernetPacket(
                 localMac,
-                targetMac,
+                gatewayMac,
                 EthernetType.IPv4);
 
             var tcpPacket = new TcpPacket(
