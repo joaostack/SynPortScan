@@ -23,7 +23,7 @@ public static class PacketBuilder
     /// <summary>
     /// Gets the MAC address from the target IP address using ARP request.
     /// </summary>
-    public static PhysicalAddress GetMacFromIP(ILiveDevice device, string targetIp)
+    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp, CancellationToken ct)
     {
         var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
             .FirstOrDefault(a =>
@@ -65,9 +65,11 @@ public static class PacketBuilder
             }
         };
 
-        device.SendPacket(ethernetPacket);
         device.StartCapture();
-        Thread.Sleep(2000);
+
+        device.SendPacket(ethernetPacket);
+        await Task.Delay(2000, ct);
+
         device.StopCapture();
 
         return macRes ?? throw new InvalidOperationException("[GetMacFromIP] MAC address not found for the target IP.");
