@@ -129,7 +129,7 @@ public static class PacketBuilder
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
 
-                if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort)
+                if (tcp != null && ip != null && ip.SourceAddress.Equals(targetIp) && tcp.DestinationPort == targetPort)
                 {
                     if (tcp.Synchronize && tcp.Acknowledgment)
                     {
@@ -141,23 +141,14 @@ public static class PacketBuilder
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Port {targetPort} is closed.");
                     }
-                    else if (!tcp.Synchronize && !tcp.Reset)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine($"Port {targetPort} is filtered (no response).");
-                    }
                 }
 
                 Console.ResetColor();
             };
 
             device.StartCapture();
-            while (!ct.IsCancellationRequested)
-            {
-                device.SendPacket(ethernetPacket);
-                Console.WriteLine("Packet sent, waiting for response...");
-                await Task.Delay(5000, ct);
-            }
+            device.SendPacket(ethernetPacket);
+            await Task.Delay(5000, ct);
             device.StopCapture();
         }
         catch (Exception ex)
