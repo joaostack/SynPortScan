@@ -12,6 +12,16 @@ using SynPortScan.Core;
 /// </summary>
 public class Program
 {
+    private static readonly string ASCII_ART = @"
+ _   |~  _
+[_]--'--[_]
+|'|""`""|'|
+| | /^\ | |
+|_|_|I|_|_|
+    SPS
+
+BY github.com/joaostack";
+
     /// <summary>
     /// SynPortScan args.
     /// </summary>
@@ -20,11 +30,13 @@ public class Program
     /// <param name="gateway">Target gateway</param>
     static async Task Main(string ip, string port, string gateway)
     {
-        Console.WriteLine("SynPortScan is a SYN port scanner.");
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine(ASCII_ART);
+        Console.ResetColor();
 
         if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(port) || string.IsNullOrEmpty(gateway))
         {
-            Console.WriteLine("Usage: SynPortScan -h");
+            Console.WriteLine("-?, -h, --help\tShow help and usage information");
             return;
         }
 

@@ -37,7 +37,9 @@ public class SynPortScanCommands
 
             // add dots on the mac address
             var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
-            Console.WriteLine($"Gateway MAC address {_gateway} : {targetGatewayMacString}");
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"[+] Gateway MAC address {_gateway} : {targetGatewayMacString}");
 
             await PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), gatewayMac, ct);
 
