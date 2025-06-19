@@ -2,6 +2,7 @@
 
 using System;
 using System.Net.NetworkInformation;
+using System.Threading.Tasks;
 using SynPortScan.Commands;
 using SynPortScan.Core;
 
@@ -16,7 +17,7 @@ public class Program
     /// <param name="ip">Target IP</param>
     /// <param name="port">Target port</param>
     /// <param name="gateway">Target gateway</param>
-    static void Main(string ip, string port, string gateway)
+    static async Task Main(string ip, string port, string gateway)
     {
         Console.WriteLine("SynPortScan is a SYN port scanner.");
 
@@ -29,7 +30,7 @@ public class Program
         try
         {
             var command = new SynPortScanCommands(ip, port, gateway);
-            command.Execute();
+            await command.Execute();
         }
         catch (Exception ex)
         {
