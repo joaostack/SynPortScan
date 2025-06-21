@@ -23,7 +23,7 @@ public static class PacketBuilder
     /// <summary>
     /// Gets the MAC address from the target IP address using ARP request.
     /// </summary>
-    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp, CancellationTokenSource ct)
+    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp, CancellationToken ct)
     {
         try
         {
@@ -79,16 +79,12 @@ public static class PacketBuilder
         {
             throw new InvalidOperationException($"[GetMacFromIP] {ex.Message}.");
         }
-        finally
-        {
-            ct.Dispose();
-        }
     }
 
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationTokenSource ct)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationToken ct)
     {
         try
         {
@@ -166,10 +162,6 @@ public static class PacketBuilder
         catch (Exception ex)
         {
             throw new InvalidOperationException($"[SendSynPacket] {ex.Message}.");
-        }
-        finally
-        {
-            ct.Dispose();
         }
     }
 }

@@ -29,7 +29,7 @@ public class SynPortScanCommands
     {
         try
         {
-            CancellationTokenSource ct = new CancellationTokenSource();
+            CancellationToken ct = new CancellationToken();
 
             var device = DeviceHelper.SelectDevice();
             DeviceHelper.OpenDevice(device);
