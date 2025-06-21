@@ -23,61 +23,72 @@ public static class PacketBuilder
     /// <summary>
     /// Gets the MAC address from the target IP address using ARP request.
     /// </summary>
-    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp, CancellationToken ct)
+    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp, CancellationTokenSource ct)
     {
-        var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
-            .FirstOrDefault(a =>
-                a.Addr.ipAddress != null &&
-                a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
-            ?.Addr.ipAddress;
-
-        var localMac = device.MacAddress;
-
-        var ethernetPacket = new EthernetPacket(
-            localMac,
-            PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"), // Broadcast MAC
-            EthernetType.Arp);
-
-        var arpPacket = new ArpPacket(
-            ArpOperation.Request,
-            localMac,
-            IPAddress.Parse(targetIp),
-            localMac,
-            localIp
-        );
-
-        ethernetPacket.PayloadPacket = arpPacket;
-
-        PhysicalAddress macRes = null;
-
-        device.OnPacketArrival += (sender, e) =>
+        try
         {
-            var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
-            var eth = packet.Extract<EthernetPacket>();
-            var arp = packet.Extract<ArpPacket>();
+            var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
+                .FirstOrDefault(a =>
+                    a.Addr.ipAddress != null &&
+                    a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
+                ?.Addr.ipAddress;
 
-            if (eth != null && arp != null &&
-                arp.SenderProtocolAddress.ToString() == targetIp &&
-                arp.Operation == ArpOperation.Response)
+            var localMac = device.MacAddress;
+
+            var ethernetPacket = new EthernetPacket(
+                localMac,
+                PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"), // Broadcast MAC
+                EthernetType.Arp);
+
+            var arpPacket = new ArpPacket(
+                ArpOperation.Request,
+                localMac,
+                IPAddress.Parse(targetIp),
+                localMac,
+                localIp
+            );
+
+            ethernetPacket.PayloadPacket = arpPacket;
+
+            PhysicalAddress macRes = null;
+
+            device.OnPacketArrival += (sender, e) =>
             {
-                macRes = arp.SenderHardwareAddress;
-                return;
-            }
-        };
+                var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
+                var eth = packet.Extract<EthernetPacket>();
+                var arp = packet.Extract<ArpPacket>();
 
-        device.StartCapture();
+                if (eth != null && arp != null &&
+                    arp.SenderProtocolAddress.ToString() == targetIp &&
+                    arp.Operation == ArpOperation.Response)
+                {
+                    macRes = arp.SenderHardwareAddress;
+                    return;
+                }
+            };
 
-        device.SendPacket(ethernetPacket);
-        await Task.Delay(2000, ct);
-        device.StopCapture();
+            device.StartCapture();
 
-        return macRes ?? throw new InvalidOperationException("[GetMacFromIP] MAC address not found for the target IP.");
+            device.SendPacket(ethernetPacket);
+            await Task.Delay(2000);
+            device.StopCapture();
+
+            return macRes ?? throw new InvalidOperationException("[GetMacFromIP] MAC address not found for the target IP.");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[GetMacFromIP] {ex.Message}.");
+        }
+        finally
+        {
+            ct.Dispose();
+        }
     }
 
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationToken ct)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationTokenSource ct)
     {
         try
         {
@@ -148,12 +159,17 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(5000, ct);
+            Console.WriteLine("Waiting for server response...");
+            await Task.Delay(5000);
             device.StopCapture();
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"[SendSynPacket] {ex.Message}.");
+        }
+        finally
+        {
+            ct.Dispose();
         }
     }
 }
