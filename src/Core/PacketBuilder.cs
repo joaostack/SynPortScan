@@ -146,7 +146,7 @@ public static class PacketBuilder
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"Port {targetPort} is open.");
                     }
-                    else if (tcp.Reset)
+                    else if (tcp.Reset && tcp.Acknowledgment)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Port {targetPort} is closed.");
