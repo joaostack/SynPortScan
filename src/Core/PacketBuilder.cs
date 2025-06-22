@@ -124,7 +124,9 @@ public static class PacketBuilder
 
             // Update checksums
             tcpPacket.UpdateCalculatedValues();
+            tcpPacket.UpdateTcpChecksum();
             ipPacket.UpdateCalculatedValues();
+            ipPacket.UpdateIPChecksum();
 
             // Set the Ethernet packet payload to the IP packet
             ethernetPacket.PayloadPacket = ipPacket;
