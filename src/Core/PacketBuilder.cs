@@ -176,7 +176,7 @@ public static class PacketBuilder
                         Console.WriteLine($"Port {targetPort} is open.");
                         device.SendPacket(ethernetPacket2);
                     }
-                    else if (tcp.Reset && tcp.Acknowledgment)
+                    else if (tcp.Reset || (tcp.Reset && tcp.Acknowledgment))
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Port {targetPort} is closed.");
@@ -192,7 +192,7 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(2000);
+            await Task.Delay(3000);
             device.StopCapture();
         }
         catch (Exception ex)
