@@ -87,6 +87,9 @@ public static class PacketBuilder
     {
         try
         {
+            // Set BPF Filter
+            device.Filter = $"tcp and host {targetIp}";
+
             var random = new Random();
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                         .FirstOrDefault(a =>
@@ -159,7 +162,6 @@ public static class PacketBuilder
 
             ethernetPacket2.PayloadPacket = ipPacket2;
 
-            device.OnPacketArrival += null;
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
                 var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
@@ -180,7 +182,8 @@ public static class PacketBuilder
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Port {targetPort} is closed.");
-                    } else if (icmp.TypeCode == IcmpV4TypeCode.UnreachableHost || icmp.TypeCode == IcmpV4TypeCode.UnreachableCommunicationProhibited)
+                    }
+                    else if (!tcp.Reset && !tcp.Acknowledgment)
                     {
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         Console.WriteLine($"Port {targetPort} is filtered.");
@@ -193,11 +196,14 @@ public static class PacketBuilder
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             await Task.Delay(3000);
-            device.StopCapture();
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"[SendSynPacket] {ex.Message}.");
+        }
+        finally
+        {
+            device.StopCapture();
         }
     }
 }
