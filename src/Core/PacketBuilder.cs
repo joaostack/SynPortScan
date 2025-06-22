@@ -168,7 +168,6 @@ public static class PacketBuilder
                 var eth = packet.Extract<EthernetPacket>();
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
-                var icmp = packet.Extract<IcmpV4Packet>();
 
                 if (tcp != null && ip != null && tcp.SourcePort == targetPort)
                 {
