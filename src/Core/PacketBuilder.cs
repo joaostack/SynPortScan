@@ -105,15 +105,18 @@ public static class PacketBuilder
                 throw new InvalidOperationException("[SendSynPacket] Local MAC address not found.");
             }
 
+            var RANDOM_PORT = (ushort)random.Next(10000, 65535);
+
             // Packets structure
             var ethernetPacket = new EthernetPacket(
                 localMac,
                 gatewayMac,
                 EthernetType.IPv4);
 
+            // Normal Connection
             var tcpPacket = new TcpPacket(
-                            (ushort)random.Next(10000, 65535),
-                            (ushort)targetPort);
+                RANDOM_PORT,
+                (ushort)targetPort);
             tcpPacket.Synchronize = true;
             tcpPacket.WindowSize = 8192;
             tcpPacket.SequenceNumber = (uint)random.Next();
@@ -131,6 +134,29 @@ public static class PacketBuilder
             // Set the Ethernet packet payload to the IP packet
             ethernetPacket.PayloadPacket = ipPacket;
 
+            // RST response
+            var ethernetPacket2 = new EthernetPacket(
+                localMac,
+                gatewayMac,
+                EthernetType.IPv4);
+
+            var tcpPacket2 = new TcpPacket(
+                RANDOM_PORT,
+                (ushort)targetPort);
+            tcpPacket2.Reset = true;
+            tcpPacket2.WindowSize = 8192;
+            tcpPacket2.SequenceNumber = (uint)random.Next();
+
+            var ipPacket2 = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
+            ipPacket2.TimeToLive = 64;
+            ipPacket2.PayloadPacket = tcpPacket2;
+
+            // Update RST Packet Checksums
+            tcpPacket2.UpdateCalculatedValues();
+            tcpPacket2.UpdateTcpChecksum();
+            ipPacket2.UpdateIPChecksum();
+            ipPacket2.UpdateCalculatedValues();
+
             device.OnPacketArrival += null;
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
@@ -138,6 +164,7 @@ public static class PacketBuilder
                 var eth = packet.Extract<EthernetPacket>();
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
+                var icmp = packet.Extract<IcmpV4Packet>();
 
                 if (tcp != null && ip != null && tcp.SourcePort == targetPort)
                 {
@@ -145,11 +172,16 @@ public static class PacketBuilder
                     {
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"Port {targetPort} is open.");
+                        device.SendPacket(ethernetPacket2);
                     }
                     else if (tcp.Reset && tcp.Acknowledgment)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Port {targetPort} is closed.");
+                    } else if (icmp.TypeCode == IcmpV4TypeCode.UnreachableHost || icmp.TypeCode == IcmpV4TypeCode.UnreachableCommunicationProhibited)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"Port {targetPort} is filtered.");
                     }
                 }
 
