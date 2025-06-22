@@ -138,8 +138,6 @@ public static class PacketBuilder
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
 
-                //Console.WriteLine($"[Debug] {packet}");
-
                 if (tcp != null && ip != null && tcp.SourcePort == targetPort)
                 {
                     if (tcp.Synchronize && tcp.Acknowledgment)
@@ -160,7 +158,7 @@ public static class PacketBuilder
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             Console.WriteLine("Waiting for server response...");
-            await Task.Delay(5000);
+            await Task.Delay(2000);
             device.StopCapture();
         }
         catch (Exception ex)
