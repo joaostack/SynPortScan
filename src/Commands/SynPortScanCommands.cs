@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using SynPortScan.Core;
 
 namespace SynPortScan.Commands;
@@ -24,7 +25,7 @@ public class SynPortScanCommands
     /// <summary>
     /// Scans a specific port on a target host using SYN scan.
     /// </summary>
-    public void Execute()
+    public async Task Execute()
     {
         try
         {
@@ -34,9 +35,10 @@ public class SynPortScanCommands
 
             // add dots on the mac address
             var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
-            Console.WriteLine($"Gateway MAC address {gatewayMac} : {targetGatewayMacString}");
+            Console.WriteLine($"Gateway MAC address {_gateway} : {targetGatewayMacString}");
 
-            PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), gatewayMac);
+            CancellationToken ct = new CancellationToken();
+            await PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), gatewayMac, ct);
 
             device.Close();
         }
