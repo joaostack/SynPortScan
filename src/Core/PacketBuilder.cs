@@ -138,7 +138,9 @@ public static class PacketBuilder
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
 
-                if (tcp != null && ip != null && ip.SourceAddress.Equals(targetIp) && tcp.DestinationPort == targetPort)
+                //Console.WriteLine($"[Debug] {packet}");
+
+                if (tcp != null && ip != null && tcp.SourcePort == targetPort)
                 {
                     if (tcp.Synchronize && tcp.Acknowledgment)
                     {
