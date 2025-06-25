@@ -67,8 +67,8 @@ public static class PacketBuilder
                 }
             };
 
-            // Set BPF Filter
-            device.Filter = $"tcp and host {targetIp}";
+            // Set BPF Filter: ARP
+            device.Filter = "arp";
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
@@ -199,6 +199,8 @@ public static class PacketBuilder
                 Console.ResetColor();
             };
 
+            // Set BPF Filter: tcp
+            device.Filter = $"tcp and src host {targetIp}";
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             await Task.Delay(3000, ct);
