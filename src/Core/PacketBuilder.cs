@@ -87,7 +87,6 @@ public static class PacketBuilder
 
             var random = new Random();
             var localMac = device.MacAddress;
-
             var ethernetPacket = new EthernetPacket(
                 localMac,
                 targetMac,
@@ -96,17 +95,25 @@ public static class PacketBuilder
             var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp))
             {
                 TimeToLive = 64,
+                Protocol = PacketDotNet.ProtocolType.Tcp
             };
 
             var tcpPacket = new TcpPacket(
                 (ushort)random.Next(1024, 65535),
-                (ushort)targetPort
-            );
-            tcpPacket.Synchronize = true;
-            tcpPacket.SequenceNumber = (uint)random.Next();
+                (ushort)targetPort)
+            {
+                Synchronize = true,
+                SequenceNumber = (uint)random.Next(),
+                WindowSize = 8192, // 8 KB
+            };
 
+            // Build packets
             ipPacket.PayloadPacket = tcpPacket;
             ethernetPacket.PayloadPacket = ipPacket;
+
+            // Update checksum
+            tcpPacket.UpdateCalculatedValues();
+            ipPacket.UpdateCalculatedValues();
             ethernetPacket.UpdateCalculatedValues();
 
             device.OnPacketArrival += (object sender, PacketCapture e) =>
@@ -116,20 +123,23 @@ public static class PacketBuilder
                 var tcp = packet.Extract<TcpPacket>();
 
                 // debugging...
-                Console.WriteLine($"Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
+                if (tcp.DestinationPort == targetPort)
+                {
+                    Console.WriteLine($"Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
+                }
 
-                if (eth != null && tcp != null && eth.DestinationHardwareAddress == targetMac &&
+                if (eth != null && tcp != null && eth.DestinationHardwareAddress == localMac &&
                     tcp.Synchronize && tcp.Acknowledgment)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"Port {targetPort} is open.");
                 }
-                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == targetMac && tcp.Reset)
+                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == localMac && tcp.Reset)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Port {targetPort} is closed.");
                 }
-                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == targetMac && !tcp.Synchronize && !tcp.Reset)
+                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == localMac && !tcp.Synchronize && !tcp.Reset)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"Port {targetPort} is filtered (no response).");
