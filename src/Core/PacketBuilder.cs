@@ -171,8 +171,6 @@ public static class PacketBuilder
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
 
-                //Console.WriteLine(packet);
-
                 if (tcp != null && ip != null && tcp.SourcePort == targetPort)
                 {
                     if (!scannedPorts.ContainsKey(targetPort))
