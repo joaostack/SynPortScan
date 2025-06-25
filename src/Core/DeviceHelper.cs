@@ -16,7 +16,7 @@ public static class DeviceHelper
 
         if (devices.Count < 1)
         {
-            throw new InvalidOperationException("No devices found. Please connect a network device.");
+            throw new InvalidOperationException("No devices found! Please connect a network device");
         }
 
         Console.ForegroundColor = ConsoleColor.Yellow;
