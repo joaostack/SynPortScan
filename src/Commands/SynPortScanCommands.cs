@@ -9,14 +9,16 @@ public class SynPortScanCommands
 {
     private readonly string _ip;
     private readonly string _port;
+    private readonly string _gateway;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SynPortScanCommands"/> class.
     /// </summary>
-    public SynPortScanCommands(string ip, string port)
+    public SynPortScanCommands(string ip, string port, string gateway)
     {
         _ip = ip;
         _port = port;
+        _gateway = gateway;
     }
 
     /// <summary>
@@ -28,12 +30,13 @@ public class SynPortScanCommands
         {
             var device = DeviceHelper.SelectDevice();
             DeviceHelper.OpenDevice(device);
-            var mac = PacketBuilder.GetMacFromIP(device, _ip);
+            var gatewayMac = PacketBuilder.GetMacFromIP(device, _gateway);
 
-            // add : on the mac address
-            var macString = string.Join(":", mac.GetAddressBytes().Select(b => b.ToString("X2")));
-            Console.WriteLine($"MAC address for {_ip}: {macString}");
-            PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), mac);
+            // add dots on the mac address
+            var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
+            Console.WriteLine($"Gateway MAC address {gatewayMac} : {targetGatewayMacString}");
+
+            PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), gatewayMac);
 
             device.Close();
         }
