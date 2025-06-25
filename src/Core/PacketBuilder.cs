@@ -103,56 +103,47 @@ public static class PacketBuilder
                 targetMac,
                 EthernetType.IPv4);
 
-            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp))
-            {
-                TimeToLive = 64,
-                Protocol = PacketDotNet.ProtocolType.Tcp
-            };
+            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
 
             var tcpPacket = new TcpPacket(
                 (ushort)random.Next(1024, 65535),
-                (ushort)targetPort)
-            {
-                Synchronize = true,
-                SequenceNumber = (uint)random.Next(),
-                WindowSize = 8192, // 8 KB
-            };
+                (ushort)targetPort);
+            tcpPacket.Synchronize = true;
+            tcpPacket.SequenceNumber = (uint)random.Next();
+            tcpPacket.WindowSize = 8192; // 8 KB
 
             // Build packets
             ipPacket.PayloadPacket = tcpPacket;
             ethernetPacket.PayloadPacket = ipPacket;
-
-            // Update checksum
-            tcpPacket.UpdateCalculatedValues();
-            ipPacket.UpdateCalculatedValues();
-            ethernetPacket.UpdateCalculatedValues();
 
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
                 var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
                 var eth = packet.Extract<EthernetPacket>();
                 var tcp = packet.Extract<TcpPacket>();
+                var ip = packet.Extract<IPv4Packet>();
 
                 // debugging...
                 if (tcp.DestinationPort == targetPort)
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"[DEBUG] {ethernetPacket.ToString()}");
                     Console.WriteLine($"[DEBUG] Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
                     Console.ResetColor();
                 }
 
-                if (eth != null && tcp != null && eth.DestinationHardwareAddress == localMac &&
+                if (eth != null && tcp != null && ip != null && tcp.DestinationPort == targetPort &&
                     tcp.Synchronize && tcp.Acknowledgment)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"Port {targetPort} is open.");
                 }
-                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == localMac && tcp.Reset)
+                else if (eth != null && tcp != null && ip != null && tcp.DestinationPort == targetPort && tcp.Reset)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Port {targetPort} is closed.");
                 }
-                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == localMac && !tcp.Synchronize && !tcp.Reset)
+                else if (eth != null && tcp != null && ip != null && tcp.DestinationPort == targetPort && !tcp.Synchronize && !tcp.Reset)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"Port {targetPort} is filtered (no response).");
