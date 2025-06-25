@@ -19,6 +19,7 @@ public static class DeviceHelper
             throw new InvalidOperationException("No devices found. Please connect a network device.");
         }
 
+        Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine(new string('-', 50));
         for (int i = 0; i < devices.Count; i++)
         {
@@ -29,6 +30,7 @@ public static class DeviceHelper
 
         Console.Write("Select a device by number: ");
         int index = int.Parse(Console.ReadLine() ?? "0");
+        Console.ResetColor();
 
         return devices[index];
     }
