@@ -34,10 +34,15 @@ BY github.com/joaostack";
         Console.WriteLine(ASCII_ART);
         Console.ResetColor();
 
-        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(gateway) || threads <= 0)
+        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(gateway))
         {
             Console.WriteLine("-?, -h, --help\tShow help and usage information");
             return;
+        }
+
+        if (threads <= 0)
+        {
+            threads = 2;
         }
 
         //Check if target is a hostname and convert to IP Address
