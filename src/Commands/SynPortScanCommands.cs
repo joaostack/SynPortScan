@@ -29,15 +29,16 @@ public class SynPortScanCommands
     {
         try
         {
+            CancellationToken ct = new CancellationToken();
+
             var device = DeviceHelper.SelectDevice();
             DeviceHelper.OpenDevice(device);
-            var gatewayMac = PacketBuilder.GetMacFromIP(device, _gateway);
+            var gatewayMac = await PacketBuilder.GetMacFromIP(device, _gateway, ct);
 
             // add dots on the mac address
             var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
             Console.WriteLine($"Gateway MAC address {_gateway} : {targetGatewayMacString}");
 
-            CancellationToken ct = new CancellationToken();
             await PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), gatewayMac, ct);
 
             device.Close();
