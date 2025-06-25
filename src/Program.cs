@@ -26,15 +26,14 @@ BY github.com/joaostack";
     /// SynPortScan args.
     /// </summary>
     /// <param name="ip">Target IP</param>
-    /// <param name="port">Target port</param>
     /// <param name="gateway">Target gateway</param>
-    static async Task Main(string ip, string port, string gateway)
+    static async Task Main(string ip, string gateway)
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(ASCII_ART);
         Console.ResetColor();
 
-        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(port) || string.IsNullOrEmpty(gateway))
+        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(gateway))
         {
             Console.WriteLine("-?, -h, --help\tShow help and usage information");
             return;
@@ -50,7 +49,7 @@ BY github.com/joaostack";
         {
             Console.WriteLine($"TARGET: {host}");
 
-            var command = new SynPortScanCommands(host.ToString(), port, gateway);
+            var command = new SynPortScanCommands(host.ToString(), gateway);
             await command.Execute();
         }
         catch (Exception ex)
