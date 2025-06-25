@@ -107,17 +107,10 @@ public static class PacketBuilder
                             (ushort)random.Next(10000, 65535),
                             (ushort)targetPort);
             tcpPacket.Synchronize = true;
-            tcpPacket.SequenceNumber = (uint)random.Next();
-            tcpPacket.WindowSize = 65535;
-
-            // random packet
-            byte[] pkt = new byte[200];
-            random.NextBytes(pkt);
-
-            tcpPacket.PayloadData = pkt;
+            tcpPacket.WindowSize = 8192;
 
             var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
-
+            ipPacket.TimeToLive = 64;
             ipPacket.PayloadPacket = tcpPacket;
 
             // Update checksums
@@ -133,11 +126,6 @@ public static class PacketBuilder
                 var eth = packet.Extract<EthernetPacket>();
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
-
-                // debugging...
-                /*Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"[DEBUG] Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
-                Console.ResetColor();*/
 
                 if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort &&
                     tcp.Synchronize && tcp.Acknowledgment)
