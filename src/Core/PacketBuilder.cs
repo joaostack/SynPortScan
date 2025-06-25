@@ -131,6 +131,7 @@ public static class PacketBuilder
             // Set the Ethernet packet payload to the IP packet
             ethernetPacket.PayloadPacket = ipPacket;
 
+            device.OnPacketArrival += null;
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
                 var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
@@ -157,7 +158,6 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            Console.WriteLine("Waiting for server response...");
             await Task.Delay(2000);
             device.StopCapture();
         }

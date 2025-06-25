@@ -41,7 +41,15 @@ public class SynPortScanCommands
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine($"[+] Gateway MAC address {_gateway} : {targetGatewayMacString}");
 
-            await PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), gatewayMac, ct);
+            // SAMPLE PORTS, FOR TESTING ONLY...
+            var ports = new List<int>() { 80, 443, 23, 21, 22, 8080, 8000 };
+
+            //await PacketBuilder.SendSynPacket(device, _ip, int.Parse(_port), gatewayMac, ct);
+
+            foreach (var port in ports)
+            {
+                await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct);
+            }
 
             device.Close();
         }
