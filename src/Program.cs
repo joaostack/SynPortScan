@@ -25,7 +25,8 @@ public class Program
         try
         {
             var device = DeviceHelper.SelectDevice();
-            PacketBuilder.GetMacFromIP(device, ip);
+            var mac = PacketBuilder.GetMacFromIP(device, ip);
+            Console.WriteLine($"MAC address for {ip}: {mac}");
         }
         catch (Exception ex)
         {
