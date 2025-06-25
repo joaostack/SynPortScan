@@ -136,7 +136,9 @@ public static class PacketBuilder
                 // debugging...
                 if (tcp.DestinationPort == targetPort)
                 {
-                    Console.WriteLine($"Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"[DEBUG] Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
+                    Console.ResetColor();
                 }
 
                 if (eth != null && tcp != null && eth.DestinationHardwareAddress == localMac &&
