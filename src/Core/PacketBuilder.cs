@@ -157,6 +157,8 @@ public static class PacketBuilder
             ipPacket2.UpdateIPChecksum();
             ipPacket2.UpdateCalculatedValues();
 
+            ethernetPacket2.PayloadPacket = ipPacket2;
+
             device.OnPacketArrival += null;
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
