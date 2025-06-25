@@ -27,7 +27,7 @@ BY github.com/joaostack";
     /// </summary>
     /// <param name="ip">Target IP</param>
     /// <param name="gateway">Target gateway</param>
-    /// <param name="threads">Threads</param>
+    /// <param name="threads" >Threads</param>
     static async Task Main(string ip, string gateway, int threads)
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
@@ -50,6 +50,12 @@ BY github.com/joaostack";
         if (!IPAddress.TryParse(ip, out var host))
         {
             host = Dns.GetHostAddresses(ip).FirstOrDefault();
+        }
+
+        if (host == null)
+        {
+            Console.WriteLine("Missing host param!");
+            return;
         }
 
         try
