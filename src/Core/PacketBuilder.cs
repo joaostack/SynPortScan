@@ -79,14 +79,23 @@ public static class PacketBuilder
     {
         try
         {
+            var random = new Random();
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                         .FirstOrDefault(a =>
                             a.Addr.ipAddress != null &&
                             a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
                         ?.Addr.ipAddress;
-
-            var random = new Random();
             var localMac = device.MacAddress;
+
+            if (localIp == null)
+            {
+                throw new InvalidOperationException("[SendSynPacket] Local IP address not found.");
+            }
+
+            if (localMac == null)
+            {
+                throw new InvalidOperationException("[SendSynPacket] Local MAC address not found.");
+            }
 
             // Packets structure
             var ethernetPacket = new EthernetPacket(
@@ -149,6 +158,7 @@ public static class PacketBuilder
 
                 Console.ResetColor();
             };
+
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             Thread.Sleep(5000);
