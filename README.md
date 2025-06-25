@@ -1,5 +1,5 @@
 # SynPortScan
-Under development project
+Experimental project
 
 ### Parameters
 ```
