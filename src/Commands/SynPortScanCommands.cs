@@ -49,7 +49,7 @@ public class SynPortScanCommands
             foreach (var port in ports)
             {
                 tasks.RemoveAll(t => t.IsCompleted);
-                tasks.Add(Task.Run(async () => await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, _threads, ct), ct));
+                tasks.Add(Task.Run(async () => await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct), ct));
 
                 if (tasks.Count >= _threads)
                 {
