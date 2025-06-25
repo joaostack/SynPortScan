@@ -109,7 +109,34 @@ public static class PacketBuilder
             ethernetPacket.PayloadPacket = ipPacket;
             ethernetPacket.UpdateCalculatedValues();
 
-            device.OnPacketArrival += (object sender, PacketCapture e) => { SearchForPacket(sender, e, targetPort); };
+            device.OnPacketArrival += (object sender, PacketCapture e) =>
+            {
+                var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
+                var eth = packet.Extract<EthernetPacket>();
+                var tcp = packet.Extract<TcpPacket>();
+
+                // debugging...
+                Console.WriteLine($"Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
+
+                if (eth != null && tcp != null && eth.DestinationHardwareAddress == targetMac &&
+                    tcp.Synchronize && tcp.Acknowledgment)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"Port {targetPort} is open.");
+                }
+                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == targetMac && tcp.Reset)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Port {targetPort} is closed.");
+                }
+                else if (eth != null && tcp != null && eth.DestinationHardwareAddress == targetMac && !tcp.Synchronize && !tcp.Reset)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"Port {targetPort} is filtered (no response).");
+                }
+
+                Console.ResetColor();
+            };
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             Thread.Sleep(5000);
@@ -119,39 +146,5 @@ public static class PacketBuilder
         {
             throw new InvalidOperationException($"[SendSynPacket] {ex.Message}.");
         }
-    }
-
-    /// <summary>
-    /// Searches for a packet in the capture to determine the port status.
-    /// </summary>
-    public static void SearchForPacket(object sender, PacketCapture e, int targetPort)
-    {
-        var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
-        var eth = packet.Extract<EthernetPacket>();
-        var tcp = packet.Extract<TcpPacket>();
-
-        if (eth != null && tcp != null &&
-            tcp.DestinationPort == targetPort &&
-            tcp.Synchronize && tcp.Acknowledgment)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"Port {targetPort} is open.");
-        }
-        else if (eth != null && tcp != null &&
-                 tcp.DestinationPort == targetPort &&
-                 tcp.Reset)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Port {targetPort} is closed.");
-        }
-        else if (eth != null && tcp != null &&
-                   tcp.DestinationPort == targetPort &&
-                   !tcp.Synchronize && !tcp.Reset)
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"Port {targetPort} is filtered (no response).");
-        }
-
-        Console.ResetColor();
     }
 }
