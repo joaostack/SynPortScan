@@ -31,7 +31,7 @@ public class SynPortScanCommands
             // add : on the mac address
             var macString = string.Join(":", mac.GetAddressBytes().Select(b => b.ToString("X2")));
             Console.WriteLine($"MAC address for {_ip}: {macString}");
-            PacketBuilder.SendSynPacket(device, _ip, 80);
+            PacketBuilder.SendSynPacket(device, _ip, 80, mac);
 
             device.Close();
         }
