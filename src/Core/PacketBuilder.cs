@@ -79,13 +79,13 @@ public static class PacketBuilder
             throw new InvalidOperationException($"[GetMacFromIP] {ex.Message}.");
         }
     }
-
-    private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(2);
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationToken ct)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, int threads, CancellationToken ct)
     {
+        SemaphoreSlim semaphoreSlim = new SemaphoreSlim(threads);
+
         try
         {
             await semaphoreSlim.WaitAsync();

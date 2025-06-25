@@ -10,14 +10,16 @@ public class SynPortScanCommands
 {
     private readonly string _ip;
     private readonly string _gateway;
+    private readonly int _threads;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SynPortScanCommands"/> class.
     /// </summary>
-    public SynPortScanCommands(string ip, string gateway)
+    public SynPortScanCommands(string ip, string gateway, int threads)
     {
         _ip = ip;
         _gateway = gateway;
+        _threads = threads;
     }
 
     /// <summary>
@@ -46,7 +48,7 @@ public class SynPortScanCommands
             foreach (var port in ports)
             {
                 tasks.RemoveAll(t => t.IsCompleted);
-                tasks.Add(PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct));
+                tasks.Add(PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, _threads, ct));
                 if (tasks.Count >= 12)
                 {
                     await Task.WhenAny(tasks);

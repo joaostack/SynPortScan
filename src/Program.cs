@@ -27,13 +27,14 @@ BY github.com/joaostack";
     /// </summary>
     /// <param name="ip">Target IP</param>
     /// <param name="gateway">Target gateway</param>
-    static async Task Main(string ip, string gateway)
+    /// <param name="threads">Threads</param>
+    static async Task Main(string ip, string gateway, int threads)
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(ASCII_ART);
         Console.ResetColor();
 
-        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(gateway))
+        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(gateway) || threads <= 0)
         {
             Console.WriteLine("-?, -h, --help\tShow help and usage information");
             return;
@@ -49,7 +50,7 @@ BY github.com/joaostack";
         {
             Console.WriteLine($"TARGET: {host}");
 
-            var command = new SynPortScanCommands(host.ToString(), gateway);
+            var command = new SynPortScanCommands(host.ToString(), gateway, threads);
             await command.Execute();
         }
         catch (Exception ex)
