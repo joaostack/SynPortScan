@@ -1,6 +1,7 @@
 ﻿namespace SynPortScan;
 
 using System;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using SynPortScan.Commands;
@@ -27,9 +28,16 @@ public class Program
             return;
         }
 
+        if (!IPAddress.TryParse(ip, out var host))
+        {
+            host = Dns.GetHostAddresses(ip).FirstOrDefault();
+        }
+
         try
         {
-            var command = new SynPortScanCommands(ip, port, gateway);
+            Console.WriteLine($"TARGET: {host}");
+
+            var command = new SynPortScanCommands(host.ToString(), port, gateway);
             await command.Execute();
         }
         catch (Exception ex)
