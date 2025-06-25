@@ -67,6 +67,9 @@ public static class PacketBuilder
                 }
             };
 
+            // Set BPF Filter
+            device.Filter = $"tcp and host {targetIp}";
+
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             await Task.Delay(2000);
@@ -79,6 +82,8 @@ public static class PacketBuilder
             throw new InvalidOperationException($"[GetMacFromIP] {ex.Message}.");
         }
     }
+
+    private static Dictionary<int, string> scannedPorts = new Dictionary<int, string>();
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
@@ -86,9 +91,6 @@ public static class PacketBuilder
     {
         try
         {
-            // Set BPF Filter
-            device.Filter = $"tcp and host {targetIp}";
-
             var random = new Random();
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                         .FirstOrDefault(a =>
@@ -160,8 +162,6 @@ public static class PacketBuilder
             ipPacket2.UpdateCalculatedValues();
 
             ethernetPacket2.PayloadPacket = ipPacket2;
-
-            Dictionary<int, string> scannedPorts = new Dictionary<int, string>();
 
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
