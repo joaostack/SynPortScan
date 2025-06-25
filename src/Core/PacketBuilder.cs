@@ -72,14 +72,14 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(2000);
+            await Task.Delay(2000, ct);
             device.StopCapture();
 
-            return macRes ?? throw new InvalidOperationException("[GetMacFromIP] MAC address not found for the target IP.");
+            return macRes ?? throw new InvalidOperationException($"[GetMacFromIP] MAC address not found for the target IP {targetIp}");
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"[GetMacFromIP] {ex.Message}.");
+            throw new InvalidOperationException($"[GetMacFromIP] {ex.Message}");
         }
     }
 
@@ -87,7 +87,7 @@ public static class PacketBuilder
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, int threads, CancellationToken ct)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationToken ct)
     {
         try
         {

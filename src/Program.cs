@@ -40,6 +40,7 @@ BY github.com/joaostack";
             return;
         }
 
+        // set default threads if params is not specified
         if (threads <= 0)
         {
             threads = 2;
