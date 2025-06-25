@@ -80,6 +80,7 @@ public static class PacketBuilder
         }
     }
 
+    private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(2);
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
@@ -87,6 +88,8 @@ public static class PacketBuilder
     {
         try
         {
+            await semaphoreSlim.WaitAsync();
+
             // Set BPF Filter
             device.Filter = $"tcp and host {targetIp}";
 
@@ -210,6 +213,7 @@ public static class PacketBuilder
         }
         finally
         {
+            semaphoreSlim.Release();
             device.StopCapture();
         }
     }
