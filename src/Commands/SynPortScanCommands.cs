@@ -38,13 +38,19 @@ public class SynPortScanCommands
 
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine($"[+] Gateway MAC address {_gateway} : {targetGatewayMacString}");
-
             // ports range
             var ports = Enumerable.Range(0, 65535);
 
+            var tasks = new List<Task>();
+
             foreach (var port in ports)
             {
-                await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct);
+                tasks.RemoveAll(t => t.IsCompleted);
+                tasks.Add(PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct));
+                if (tasks.Count >= 12)
+                {
+                    await Task.WhenAny(tasks);
+                }
             }
 
             device.Close();
