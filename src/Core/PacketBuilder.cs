@@ -84,12 +84,8 @@ public static class PacketBuilder
     /// </summary>
     public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, int threads, CancellationToken ct)
     {
-        SemaphoreSlim semaphoreSlim = new SemaphoreSlim(threads);
-
         try
         {
-            await semaphoreSlim.WaitAsync();
-
             // Set BPF Filter
             device.Filter = $"tcp and host {targetIp}";
 
@@ -213,7 +209,6 @@ public static class PacketBuilder
         }
         finally
         {
-            semaphoreSlim.Release();
             device.StopCapture();
         }
     }

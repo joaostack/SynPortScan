@@ -29,7 +29,8 @@ public class SynPortScanCommands
     {
         try
         {
-            CancellationToken ct = new CancellationToken();
+            using var cts = new CancellationTokenSource();
+            var ct = cts.Token;
 
             var device = DeviceHelper.SelectDevice();
             DeviceHelper.OpenDevice(device);
@@ -48,7 +49,9 @@ public class SynPortScanCommands
             foreach (var port in ports)
             {
                 tasks.RemoveAll(t => t.IsCompleted);
-                tasks.Add(PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, _threads, ct));
+                //tasks.Add(PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, _threads, ct));
+                tasks.Add(Task.Run(async () => await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, _threads, ct), ct));
+
                 if (tasks.Count >= _threads)
                 {
                     await Task.WhenAny(tasks);
