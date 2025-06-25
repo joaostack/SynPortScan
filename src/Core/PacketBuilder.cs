@@ -162,6 +162,8 @@ public static class PacketBuilder
 
             ethernetPacket2.PayloadPacket = ipPacket2;
 
+            Dictionary<int, string> scannedPorts = new Dictionary<int, string>();
+
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
                 var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
@@ -169,23 +171,31 @@ public static class PacketBuilder
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
 
+                //Console.WriteLine(packet);
+
                 if (tcp != null && ip != null && tcp.SourcePort == targetPort)
                 {
-                    if (tcp.Synchronize && tcp.Acknowledgment)
+                    if (!scannedPorts.ContainsKey(targetPort))
                     {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine($"Port {targetPort} is open.");
-                        device.SendPacket(ethernetPacket2);
-                    }
-                    else if (tcp.Reset || (tcp.Reset && tcp.Acknowledgment))
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Port {targetPort} is closed.");
-                    }
-                    else if (!tcp.Reset && !tcp.Acknowledgment)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine($"Port {targetPort} is filtered.");
+                        if (tcp.Synchronize && tcp.Acknowledgment)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine($"Port {targetPort} is open.");
+                            scannedPorts[targetPort] = "open";
+                            device.SendPacket(ethernetPacket2);
+                        }
+                        else if (tcp.Reset || (tcp.Reset && tcp.Acknowledgment))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Port {targetPort} is closed.");
+                            scannedPorts[targetPort] = "closed";
+                        }
+                        else if (!tcp.Reset && !tcp.Acknowledgment)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine($"Port {targetPort} is filtered.");
+                            scannedPorts[targetPort] = "filtered";
+                        }
                     }
                 }
 
