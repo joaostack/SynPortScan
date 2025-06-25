@@ -57,6 +57,8 @@ public class SynPortScanCommands
                 }
             }
 
+            await Task.WhenAll(tasks);
+
             device.Close();
         }
         catch (Exception ex)
