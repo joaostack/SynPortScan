@@ -87,6 +87,8 @@ public static class PacketBuilder
 
             var random = new Random();
             var localMac = device.MacAddress;
+
+            // Packets structure
             var ethernetPacket = new EthernetPacket(
                 localMac,
                 targetMac,
