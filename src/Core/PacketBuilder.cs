@@ -68,7 +68,6 @@ public static class PacketBuilder
             };
 
             device.StartCapture();
-
             device.SendPacket(ethernetPacket);
             await Task.Delay(2000);
             device.StopCapture();
@@ -117,6 +116,7 @@ public static class PacketBuilder
                             (ushort)targetPort);
             tcpPacket.Synchronize = true;
             tcpPacket.WindowSize = 8192;
+            tcpPacket.SequenceNumber = (uint)random.Next();
 
             var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
             ipPacket.TimeToLive = 64;
