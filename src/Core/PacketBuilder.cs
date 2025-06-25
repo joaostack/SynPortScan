@@ -114,7 +114,11 @@ public static class PacketBuilder
 
             // Build packets
             ipPacket.PayloadPacket = tcpPacket;
+            ipPacket.UpdateCalculatedValues();
+            tcpPacket.UpdateCalculatedValues();
+
             ethernetPacket.PayloadPacket = ipPacket;
+            ethernetPacket.UpdateCalculatedValues();
 
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
@@ -124,26 +128,22 @@ public static class PacketBuilder
                 var ip = packet.Extract<IPv4Packet>();
 
                 // debugging...
-                if (tcp.DestinationPort == targetPort)
-                {
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine($"[DEBUG] {ethernetPacket.ToString()}");
-                    Console.WriteLine($"[DEBUG] Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
-                    Console.ResetColor();
-                }
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"[DEBUG] Packet captured: {packet} - {eth?.SourceHardwareAddress} -> {eth?.DestinationHardwareAddress}");
+                Console.ResetColor();
 
-                if (eth != null && tcp != null && ip != null && tcp.DestinationPort == targetPort &&
+                if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort &&
                     tcp.Synchronize && tcp.Acknowledgment)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"Port {targetPort} is open.");
                 }
-                else if (eth != null && tcp != null && ip != null && tcp.DestinationPort == targetPort && tcp.Reset)
+                else if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort && tcp.Reset)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Port {targetPort} is closed.");
                 }
-                else if (eth != null && tcp != null && ip != null && tcp.DestinationPort == targetPort && !tcp.Synchronize && !tcp.Reset)
+                else if (eth != null && tcp != null && ip != null && tcp.SourcePort == targetPort && !tcp.Synchronize && !tcp.Reset)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"Port {targetPort} is filtered (no response).");
@@ -154,7 +154,7 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            Thread.Sleep(5000);
+            Thread.Sleep(15000);
             device.StopCapture();
         }
         catch (Exception ex)
