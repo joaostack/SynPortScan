@@ -199,11 +199,12 @@ public static class PacketBuilder
                 Console.ResetColor();
             };
 
-            // Set BPF Filter: tcp
+            // Set BPF Filter
             device.Filter = $"tcp and host {targetIp}";
+
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(3000, ct);
+            await Task.Delay(5000, ct);
         }
         catch (Exception ex)
         {
