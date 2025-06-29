@@ -200,7 +200,7 @@ public static class PacketBuilder
             };
 
             // Set BPF Filter: tcp
-            device.Filter = $"tcp and src host {targetIp}";
+            device.Filter = $"tcp and host {targetIp}";
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             await Task.Delay(3000, ct);
