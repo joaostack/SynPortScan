@@ -46,10 +46,15 @@ public class SynPortScanCommands
             var ports = Enumerable.Range(0, 65535);
             var tasks = new List<Task>();
 
+            Console.WriteLine("Scanning...");
+
             foreach (var port in ports)
             {
                 tasks.RemoveAll(t => t.IsCompleted | t.IsCompletedSuccessfully);
-                tasks.Add(Task.Run(async () => await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct), ct));
+                tasks.Add(Task.Run(async () =>
+                {
+                    await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct);
+                }));
 
                 if (tasks.Count >= _threads)
                 {
@@ -57,7 +62,8 @@ public class SynPortScanCommands
                 }
             }
 
-            await Task.WhenAll(tasks);
+            Task t = Task.WhenAll(tasks);
+            t.Wait();
 
             device.Close();
         }
