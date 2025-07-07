@@ -46,7 +46,7 @@ public class SynPortScanCommands
             var ports = Enumerable.Range(0, 65535);
             var tasks = new List<Task>();
 
-            Console.WriteLine("Scanning...");
+            Console.WriteLine($"{DateTime.UtcNow} Scanning...");
 
             foreach (var port in ports)
             {
