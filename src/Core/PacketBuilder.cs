@@ -23,7 +23,7 @@ public static class PacketBuilder
     /// <summary>
     /// Gets the MAC address from the target IP address using ARP request.
     /// </summary>
-    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp, CancellationToken ct)
+    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp)
     {
         try
         {
@@ -72,7 +72,7 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(2000, ct);
+            await Task.Delay(2000);
             device.StopCapture();
 
             return macRes ?? throw new InvalidOperationException($"[GetMacFromIP] MAC address not found for the target IP {targetIp}");
@@ -87,7 +87,7 @@ public static class PacketBuilder
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac, CancellationToken ct)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac)
     {
         try
         {
@@ -204,7 +204,7 @@ public static class PacketBuilder
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(5000, ct);
+            await Task.Delay(5000);
         }
         catch (Exception ex)
         {

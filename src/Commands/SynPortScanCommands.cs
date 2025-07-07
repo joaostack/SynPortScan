@@ -27,14 +27,14 @@ public class SynPortScanCommands
     /// </summary>
     public async Task Execute()
     {
+
+        var semaphoreSlim = new SemaphoreSlim(_threads);
+
         try
         {
-            using var cts = new CancellationTokenSource();
-            var ct = cts.Token;
-
             var device = DeviceHelper.SelectDevice();
             DeviceHelper.OpenDevice(device);
-            var gatewayMac = await PacketBuilder.GetMacFromIP(device, _gateway, ct);
+            var gatewayMac = await PacketBuilder.GetMacFromIP(device, _gateway);
 
             // add dots on the mac address
             var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
@@ -46,25 +46,30 @@ public class SynPortScanCommands
             var ports = Enumerable.Range(0, 65535);
             var tasks = new List<Task>();
 
-            Console.WriteLine($"{DateTime.UtcNow} Scanning...");
+            Console.WriteLine($"[{DateTime.UtcNow}] Scanning...");
 
             foreach (var port in ports)
             {
-                tasks.RemoveAll(t => t.IsCompleted | t.IsCompletedSuccessfully);
-                tasks.Add(Task.Run(async () =>
-                {
-                    await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac, ct);
-                }));
+                await semaphoreSlim.WaitAsync();
 
-                if (tasks.Count >= _threads)
+                //tasks.RemoveAll(t => t.IsCompleted | t.IsCompletedSuccessfully);
+
+                var task = Task.Run(async () =>
                 {
-                    await Task.WhenAny(tasks);
-                }
+                    try
+                    {
+                        await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac);
+                    }
+                    finally
+                    {
+                        semaphoreSlim.Release();
+                    }
+                });
+
+                tasks.Add(task);
             }
 
-            Task t = Task.WhenAll(tasks);
-            t.Wait();
-
+            await Task.WhenAll(tasks);
             device.Close();
         }
         catch (Exception ex)
