@@ -16,23 +16,16 @@ public static class DeviceHelper
 
         if (devices.Count < 1)
         {
-<<<<<<< HEAD
             throw new InvalidOperationException("No devices found! Please connect a network device");
         }
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine(new string('-', 50));
-=======
-            throw new InvalidOperationException("No devices found. Please connect a network device.");
-        }
-
->>>>>>> 7af7f32 (GetMacFromIP implemented)
         for (int i = 0; i < devices.Count; i++)
         {
             var device = devices[i];
             Console.WriteLine($"{i}: {device.Description} ({device.Name})");
         }
-<<<<<<< HEAD
         Console.WriteLine(new string('-', 50));
 
         Console.Write("Select a device by number: ");
@@ -54,12 +47,4 @@ public static class DeviceHelper
 
         device.Open(DeviceModes.Promiscuous, 1000);
     }
-=======
-
-        Console.Write("Select a device by number: ");
-        int index = int.Parse(Console.ReadLine() ?? "0");
-
-        return devices[index];
-    }
->>>>>>> 7af7f32 (GetMacFromIP implemented)
 }
