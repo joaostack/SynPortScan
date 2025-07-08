@@ -34,6 +34,7 @@ BY github.com/joaostack";
         Console.WriteLine(ASCII_ART);
         Console.ResetColor();
 
+<<<<<<< HEAD
         if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(gateway))
         {
             Console.WriteLine("-?, -h, --help\tShow help and usage information");
@@ -55,15 +56,25 @@ BY github.com/joaostack";
         if (host == null)
         {
             Console.WriteLine("Missing host param!");
+=======
+        if (string.IsNullOrEmpty(ip))
+        {
+            Console.WriteLine("Usage: SynPortScan -h");
+>>>>>>> 7af7f32 (GetMacFromIP implemented)
             return;
         }
 
         try
         {
+<<<<<<< HEAD
             Console.WriteLine($"TARGET: {host}");
 
             var command = new SynPortScanCommands(host.ToString(), gateway, threads);
             await command.Execute();
+=======
+            var device = DeviceHelper.SelectDevice();
+            PacketBuilder.GetMacFromIP(device, ip);
+>>>>>>> 7af7f32 (GetMacFromIP implemented)
         }
         catch (Exception ex)
         {
