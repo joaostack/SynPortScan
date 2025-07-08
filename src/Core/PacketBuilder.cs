@@ -205,6 +205,7 @@ public static class PacketBuilder
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             await Task.Delay(5000);
+            device.StopCapture();
         }
         catch (Exception ex)
         {
