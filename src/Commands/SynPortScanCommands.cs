@@ -52,7 +52,7 @@ public class SynPortScanCommands
             {
                 await semaphoreSlim.WaitAsync();
 
-                //tasks.RemoveAll(t => t.IsCompleted | t.IsCompletedSuccessfully);
+                tasks.RemoveAll(t => t.IsCompleted | t.IsCompletedSuccessfully);
 
                 var task = Task.Run(async () =>
                 {
