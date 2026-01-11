@@ -1,4 +1,16 @@
 # SynPortScan
+
+```
+ _   |~  _
+[_]--'--[_]
+|'|""`""|'|
+| | /^\ | |
+|_|_|I|_|_|
+    SPS
+
+BY github.com/joaostack
+```
+
 ### [⚠️] Experimental project
 
 ### Parameters
