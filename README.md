@@ -19,4 +19,3 @@ Options:
 ```
 dotnet run --project src -- --ip scanme.nmap.org
 ```
-
