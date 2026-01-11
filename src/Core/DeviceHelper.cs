@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.NetworkInformation;
 using SharpPcap;
 
 namespace SynPortScan.Core;
@@ -46,5 +48,18 @@ public static class DeviceHelper
         }
 
         device.Open(DeviceModes.Promiscuous, 1000);
+    }
+
+    /// <summary>
+    /// Helper for getting the gateway IP address (this is from my ArpPoison project)
+    /// </summary>
+    public static IPAddress GetGatewayIP()
+    {
+        return NetworkInterface
+            .GetAllNetworkInterfaces()
+            .Where(n => n.OperationalStatus == OperationalStatus.Up)
+            .SelectMany(n => n.GetIPProperties().GatewayAddresses)
+            .Select(g => g.Address)
+            .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
     }
 }

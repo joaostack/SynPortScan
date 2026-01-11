@@ -23,18 +23,20 @@ public static class PacketBuilder
     /// <summary>
     /// Gets the MAC address from the target IP address using ARP request.
     /// </summary>
-    public static async Task<PhysicalAddress> GetMacFromIP(ILiveDevice device, string targetIp)
+    public static async Task<string> GetMacFromIP(ILiveDevice device, string targetIp, CancellationToken ct)
     {
         try
         {
+            // Get local ip
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
-                .FirstOrDefault(a =>
-                    a.Addr.ipAddress != null &&
-                    a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
-                ?.Addr.ipAddress;
+                            .FirstOrDefault(a =>
+                                a.Addr.ipAddress != null &&
+                                a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
+                            ?.Addr.ipAddress;
+
+            if (localIp == null) throw new InvalidOperationException("Local IP address not found.");
 
             var localMac = device.MacAddress;
-
             var ethernetPacket = new EthernetPacket(
                 localMac,
                 PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"), // Broadcast MAC
@@ -42,7 +44,7 @@ public static class PacketBuilder
 
             var arpPacket = new ArpPacket(
                 ArpOperation.Request,
-                localMac,
+                PhysicalAddress.Parse("00-00-00-00-00-00"), //unknown mac
                 IPAddress.Parse(targetIp),
                 localMac,
                 localIp
@@ -50,32 +52,50 @@ public static class PacketBuilder
 
             ethernetPacket.PayloadPacket = arpPacket;
 
-            PhysicalAddress macRes = null;
+            string macRes = null;
 
-            device.OnPacketArrival += (sender, e) =>
+            // ++++++++++++++++++++++++++++++++++
+            // Task completion source to await the response (macRes)
+            // ++++++++++++++++++++++++++++++++++
+            var tcs = new TaskCompletionSource<string>();
+
+            PacketArrivalEventHandler handler = (sender, e) =>
             {
                 var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
-                var eth = packet.Extract<EthernetPacket>();
+                //var eth = packet.Extract<EthernetPacket>();
                 var arp = packet.Extract<ArpPacket>();
 
-                if (eth != null && arp != null &&
-                    arp.SenderProtocolAddress.ToString() == targetIp &&
-                    arp.Operation == ArpOperation.Response)
+                if (arp != null && arp.Operation == ArpOperation.Response && arp.SenderProtocolAddress.Equals(targetIp))
                 {
-                    macRes = arp.SenderHardwareAddress;
+                    tcs.TrySetResult(arp.SenderHardwareAddress.ToString());
                     return;
                 }
             };
 
-            // Set BPF Filter: ARP
+            // set BPF Filter
             device.Filter = "arp";
-
+            device.OnPacketArrival += handler;
             device.StartCapture();
+            await Task.Delay(500, ct); // prevent handler problms
             device.SendPacket(ethernetPacket);
-            await Task.Delay(2000);
-            device.StopCapture();
 
-            return macRes ?? throw new InvalidOperationException($"[GetMacFromIP] MAC address not found for the target IP {targetIp}");
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(1000);
+
+            try
+            {
+                macRes = await tcs.Task.WaitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                macRes = null;
+            }
+            finally
+            {
+                device.OnPacketArrival -= handler;
+            }
+
+            return macRes ?? throw new InvalidOperationException($"MAC address not found for the target IP {targetIp}");
         }
         catch (Exception ex)
         {
@@ -99,25 +119,19 @@ public static class PacketBuilder
                         ?.Addr.ipAddress;
             var localMac = device.MacAddress;
 
-            if (localIp == null)
-            {
-                throw new InvalidOperationException("[SendSynPacket] Local IP address not found.");
-            }
-
-            if (localMac == null)
-            {
-                throw new InvalidOperationException("[SendSynPacket] Local MAC address not found.");
-            }
+            if (localIp == null) throw new InvalidOperationException("Local IP address not found.");
+            if (localMac == null) throw new InvalidOperationException("Local MAC address not found.");
 
             var RANDOM_PORT = (ushort)random.Next(10000, 65535);
 
+            // +++++++++++++++++
             // Packets structure
+            // +++++++++++++++++
             var ethernetPacket = new EthernetPacket(
                 localMac,
                 gatewayMac,
                 EthernetType.IPv4);
 
-            // Normal Connection
             var tcpPacket = new TcpPacket(
                 RANDOM_PORT,
                 (ushort)targetPort);
@@ -129,16 +143,19 @@ public static class PacketBuilder
             ipPacket.TimeToLive = 64;
             ipPacket.PayloadPacket = tcpPacket;
 
+            // +++++++++++++++++
             // Update checksums
+            // +++++++++++++++++
             tcpPacket.UpdateCalculatedValues();
             tcpPacket.UpdateTcpChecksum();
             ipPacket.UpdateCalculatedValues();
             ipPacket.UpdateIPChecksum();
 
-            // Set the Ethernet packet payload to the IP packet
             ethernetPacket.PayloadPacket = ipPacket;
 
-            // RST response
+            // +++++++++++++++++
+            // this's RST response for close connection
+            // +++++++++++++++++
             var ethernetPacket2 = new EthernetPacket(
                 localMac,
                 gatewayMac,
@@ -155,7 +172,9 @@ public static class PacketBuilder
             ipPacket2.TimeToLive = 64;
             ipPacket2.PayloadPacket = tcpPacket2;
 
-            // Update RST Packet Checksums
+            // +++++++++++++++++
+            // update checksums again
+            // +++++++++++++++++
             tcpPacket2.UpdateCalculatedValues();
             tcpPacket2.UpdateTcpChecksum();
             ipPacket2.UpdateIPChecksum();
@@ -200,7 +219,7 @@ public static class PacketBuilder
             };
 
             // Set BPF Filter
-            device.Filter = $"tcp and host {targetIp}";
+            //device.Filter = $"tcp and host {targetIp}";
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);

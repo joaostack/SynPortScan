@@ -1,3 +1,6 @@
+using System.CommandLine.Help;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using SynPortScan.Core;
 
@@ -9,23 +12,21 @@ namespace SynPortScan.Commands;
 public class SynPortScanCommands
 {
     private readonly string _ip;
-    private readonly string _gateway;
     private readonly int _threads;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SynPortScanCommands"/> class.
     /// </summary>
-    public SynPortScanCommands(string ip, string gateway, int threads)
+    public SynPortScanCommands(string ip, int threads)
     {
         _ip = ip;
-        _gateway = gateway;
         _threads = threads;
     }
 
     /// <summary>
     /// Scans a specific port on a target host using SYN scan.
     /// </summary>
-    public async Task Execute()
+    public async Task ExecuteAsync(CancellationToken ct)
     {
 
         var semaphoreSlim = new SemaphoreSlim(_threads);
@@ -34,26 +35,21 @@ public class SynPortScanCommands
         {
             var device = DeviceHelper.SelectDevice();
             DeviceHelper.OpenDevice(device);
-            var gatewayMac = await PacketBuilder.GetMacFromIP(device, _gateway);
-
-            // add dots on the mac address
+            var gatewayIP = DeviceHelper.GetGatewayIP();
+            var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIP.ToString(), ct));
+            // add dots to the mac address
             var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
-
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"[+] Gateway MAC address {_gateway} : {targetGatewayMacString}");
-
             // ports range
             var ports = Enumerable.Range(0, 65535);
-            var tasks = new List<Task>();
 
-            Console.WriteLine($"[{DateTime.UtcNow}] Scanning...");
+            Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
 
-            foreach (var port in ports)
+            var tasks = ports.Select(async port =>
             {
-                await semaphoreSlim.WaitAsync();
-
                 var task = Task.Run(async () =>
                 {
+                    await semaphoreSlim.WaitAsync();
+
                     try
                     {
                         await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac);
@@ -63,9 +59,7 @@ public class SynPortScanCommands
                         semaphoreSlim.Release();
                     }
                 });
-
-                tasks.Add(task);
-            }
+            });
 
             await Task.WhenAll(tasks);
             device.Close();
@@ -73,7 +67,7 @@ public class SynPortScanCommands
         catch (Exception ex)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine(ex.Message);
         }
         finally
         {
