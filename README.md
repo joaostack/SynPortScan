@@ -11,12 +11,12 @@ Usage:
 
 Options:
   --ip <ip>            Target IP
-  --gateway <gateway>  Target gateway
-  --threads <threads>  Threads
+  --threads <threads>  Threads (optional)
   --version            Show version information
   -?, -h, --help       Show help and usage information
 ```
 ### Sample
 ```
-dotnet run --project src -- --ip scanme.nmap.org --gateway 10.0.0.2 --threads 4
+dotnet run --project src -- --ip scanme.nmap.org
 ```
+
