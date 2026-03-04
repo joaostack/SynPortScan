@@ -71,12 +71,23 @@ public static class PacketBuilder
             device.StartCapture();
             device.SendPacket(ethernetPacket);
 
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(3000);
-
             try
             {
-                macRes = await tcs.Task.WaitAsync(cts.Token);
+                device.OnPacketArrival += (object sender, PacketCapture e) =>
+                {
+                    var rawPacket = e.GetPacket();
+                    var packet = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
+                    var arpPacket = packet.Extract<ArpPacket>();
+
+                    if (arpPacket != null)
+                    {
+                        if (arpPacket.Operation == ArpOperation.Response)
+                            macRes = arpPacket.SenderHardwareAddress.ToString();
+                    }
+
+                };
+
+                await Task.Delay(3000, ct);
             }
             catch (OperationCanceledException)
             {
@@ -85,6 +96,7 @@ public static class PacketBuilder
             finally
             {
                 device.OnPacketArrival -= handler;
+                device.StopCapture();
             }
 
             return macRes ?? throw new InvalidOperationException($"MAC address not found for the target IP {targetIp}");

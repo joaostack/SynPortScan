@@ -35,7 +35,6 @@ public class SynPortScanCommands
 
             // add dots to the mac address
             var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
-            // ports range
             var ports = Enumerable.Range(0, 65535);
 
             Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
