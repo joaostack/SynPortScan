@@ -40,11 +40,8 @@ public class SynPortScanCommands
 
             Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
 
-            ports.Select(async port =>
-            {
+            foreach (var port in ports)
                 await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac);
-
-            });
 
             device.Close();
         }
