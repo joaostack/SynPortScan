@@ -55,11 +55,15 @@ public static class DeviceHelper
     /// </summary>
     public static IPAddress GetGatewayIP()
     {
-        return NetworkInterface
-            .GetAllNetworkInterfaces()
+        var allIfaces = NetworkInterface.GetAllNetworkInterfaces();
+        var gateway = allIfaces
             .Where(n => n.OperationalStatus == OperationalStatus.Up)
             .SelectMany(n => n.GetIPProperties().GatewayAddresses)
             .Select(g => g.Address)
             .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+
+        if (gateway == null) throw new Exception("No gateway found!");
+
+        return gateway;
     }
 }

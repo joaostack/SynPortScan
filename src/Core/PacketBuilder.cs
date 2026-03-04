@@ -27,21 +27,16 @@ public static class PacketBuilder
     {
         try
         {
-            // Get local ip
+            // search for local mac & local ip
+            var localMac = device.MacAddress;
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                             .FirstOrDefault(a =>
-                                a.Addr.ipAddress != null &&
+                                a.Addr?.ipAddress != null &&
                                 a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
-                            ?.Addr.ipAddress;
-
+                            ?.Addr?.ipAddress;
             if (localIp == null) throw new InvalidOperationException("Local IP address not found.");
 
-            var localMac = device.MacAddress;
-            var ethernetPacket = new EthernetPacket(
-                localMac,
-                PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"), // Broadcast MAC
-                EthernetType.Arp);
-
+            // create broadcast arp packet
             var arpPacket = new ArpPacket(
                 ArpOperation.Request,
                 PhysicalAddress.Parse("00-00-00-00-00-00"), //unknown mac
@@ -50,19 +45,23 @@ public static class PacketBuilder
                 localIp
             );
 
+            var ethernetPacket = new EthernetPacket(
+                localMac,
+                PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"), // Broadcast MAC
+                EthernetType.Arp)
+            {
+                PayloadPacket = arpPacket
+            };
+
             ethernetPacket.PayloadPacket = arpPacket;
 
-            string macRes = null;
-
-            // ++++++++++++++++++++++++++++++++++
-            // Task completion source to await the response (macRes)
-            // ++++++++++++++++++++++++++++++++++
+            // wait for client response
+            string macRes = null!;
             var tcs = new TaskCompletionSource<string>();
-
             PacketArrivalEventHandler handler = (sender, e) =>
             {
-                var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
-                //var eth = packet.Extract<EthernetPacket>();
+                var rawPacket = e.GetPacket();
+                var packet = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
                 var arp = packet.Extract<ArpPacket>();
 
                 if (arp != null && arp.Operation == ArpOperation.Response && arp.SenderProtocolAddress.Equals(targetIp))
@@ -72,15 +71,13 @@ public static class PacketBuilder
                 }
             };
 
-            // set BPF Filter
             device.Filter = "arp";
             device.OnPacketArrival += handler;
             device.StartCapture();
-            await Task.Delay(500, ct); // prevent handler problms
             device.SendPacket(ethernetPacket);
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(2000);
+            cts.CancelAfter(3000);
 
             try
             {
@@ -88,7 +85,7 @@ public static class PacketBuilder
             }
             catch (OperationCanceledException)
             {
-                macRes = null;
+                macRes = null!;
             }
             finally
             {
@@ -114,9 +111,9 @@ public static class PacketBuilder
             var random = new Random();
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                         .FirstOrDefault(a =>
-                            a.Addr.ipAddress != null &&
+                            a.Addr?.ipAddress != null &&
                             a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
-                        ?.Addr.ipAddress;
+                        ?.Addr?.ipAddress;
             var localMac = device.MacAddress;
 
             if (localIp == null) throw new InvalidOperationException("Local IP address not found.");
@@ -124,63 +121,51 @@ public static class PacketBuilder
 
             var RANDOM_PORT = (ushort)random.Next(10000, 65535);
 
-            // +++++++++++++++++
-            // Packets structure
-            // +++++++++++++++++
+            // SYN PACKET 
             var ethernetPacket = new EthernetPacket(
                 localMac,
                 gatewayMac,
                 EthernetType.IPv4);
-
             var tcpPacket = new TcpPacket(
                 RANDOM_PORT,
-                (ushort)targetPort);
-            tcpPacket.Synchronize = true;
-            tcpPacket.WindowSize = 8192;
-            tcpPacket.SequenceNumber = (uint)random.Next();
+                (ushort)targetPort)
+            {
+                Synchronize = true,
+            };
+            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp))
+            {
+                PayloadPacket = tcpPacket
+            };
+            ethernetPacket.PayloadPacket = ipPacket;
 
-            var ipPacket = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
-            ipPacket.TimeToLive = 64;
-            ipPacket.PayloadPacket = tcpPacket;
+            // RST RESPONSE
+            var ethernetPacket2 = new EthernetPacket(
+                localMac,
+                gatewayMac,
+                EthernetType.IPv4);
+            var tcpPacket2 = new TcpPacket(
+                RANDOM_PORT,
+                (ushort)targetPort)
+            {
+                Reset = true
+            };
+            var ipPacket2 = new IPv4Packet(localIp, IPAddress.Parse(targetIp))
+            {
+                PayloadPacket = tcpPacket2
+            };
+            ethernetPacket2.PayloadPacket = ipPacket2;
 
-            // +++++++++++++++++
-            // Update checksums
-            // +++++++++++++++++
+            // SYN Checksum
             tcpPacket.UpdateCalculatedValues();
             tcpPacket.UpdateTcpChecksum();
             ipPacket.UpdateCalculatedValues();
             ipPacket.UpdateIPChecksum();
 
-            ethernetPacket.PayloadPacket = ipPacket;
-
-            // +++++++++++++++++
-            // this's RST response for close connection
-            // +++++++++++++++++
-            var ethernetPacket2 = new EthernetPacket(
-                localMac,
-                gatewayMac,
-                EthernetType.IPv4);
-
-            var tcpPacket2 = new TcpPacket(
-                RANDOM_PORT,
-                (ushort)targetPort);
-            tcpPacket2.Reset = true;
-            tcpPacket2.WindowSize = 8192;
-            tcpPacket2.SequenceNumber = (uint)random.Next();
-
-            var ipPacket2 = new IPv4Packet(localIp, IPAddress.Parse(targetIp));
-            ipPacket2.TimeToLive = 64;
-            ipPacket2.PayloadPacket = tcpPacket2;
-
-            // +++++++++++++++++
-            // update checksums again
-            // +++++++++++++++++
+            // RST Checksum
             tcpPacket2.UpdateCalculatedValues();
             tcpPacket2.UpdateTcpChecksum();
             ipPacket2.UpdateIPChecksum();
             ipPacket2.UpdateCalculatedValues();
-
-            ethernetPacket2.PayloadPacket = ipPacket2;
 
             // sniff & handle server response
             device.OnPacketArrival += (object sender, PacketCapture e) =>
@@ -199,6 +184,8 @@ public static class PacketBuilder
                             Console.ForegroundColor = ConsoleColor.Green;
                             Console.WriteLine($"Port {targetPort} is open.");
                             scannedPorts[targetPort] = "open";
+
+                            // close connection with RST flag
                             device.SendPacket(ethernetPacket2);
                         }
                         else if (tcp.Reset || (tcp.Reset && tcp.Acknowledgment))
@@ -219,9 +206,7 @@ public static class PacketBuilder
                 Console.ResetColor();
             };
 
-            // Set BPF Filter
             device.Filter = $"tcp and host {targetIp}";
-
             device.StartCapture();
             device.SendPacket(ethernetPacket);
             await Task.Delay(3000);
