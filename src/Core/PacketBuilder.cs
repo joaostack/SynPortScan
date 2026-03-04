@@ -219,7 +219,7 @@ public static class PacketBuilder
             device.Filter = $"tcp and host {targetIp}";
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(2000);
+            await Task.Delay(100);
         }
         catch (Exception ex)
         {
