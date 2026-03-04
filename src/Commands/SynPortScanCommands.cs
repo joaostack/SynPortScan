@@ -28,32 +28,21 @@ public class SynPortScanCommands
     /// </summary>
     public async Task ExecuteAsync(CancellationToken ct)
     {
-        try
-        {
-            var device = DeviceHelper.SelectDevice();
-            DeviceHelper.OpenDevice(device);
-            var gatewayIP = DeviceHelper.GetGatewayIP();
-            var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIP.ToString(), ct));
+        var device = DeviceHelper.SelectDevice();
+        DeviceHelper.OpenDevice(device);
+        var gatewayIP = DeviceHelper.GetGatewayIP();
+        var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIP.ToString(), ct));
 
-            // add dots to the mac address
-            var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
-            var ports = Enumerable.Range(0, 65535);
+        // add dots to the mac address
+        var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
+        var ports = Enumerable.Range(0, 65535);
 
-            Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
+        Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
 
-            foreach (var port in ports)
-                await PacketBuilder.SendSynPacket(device, IP, port, Verbose, gatewayMac);
+        foreach (var port in ports)
+            await PacketBuilder.SendSynPacket(device, IP, port, Verbose, gatewayMac);
 
-            device.Close();
-        }
-        catch (Exception ex)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(ex.Message);
-        }
-        finally
-        {
-            Console.ResetColor();
-        }
+        device.Close();
+        Console.ResetColor();
     }
 }
