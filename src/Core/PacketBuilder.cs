@@ -29,12 +29,7 @@ public static class PacketBuilder
         {
             // search for local mac & local ip
             var localMac = device.MacAddress;
-            var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
-                            .FirstOrDefault(a =>
-                                a.Addr?.ipAddress != null &&
-                                a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
-                            ?.Addr?.ipAddress;
-            if (localIp == null) throw new InvalidOperationException("Local IP address not found.");
+            var localIp = DeviceHelper.GetLocalIP(device);
 
             // create broadcast arp packet
             var arpPacket = new ArpPacket(

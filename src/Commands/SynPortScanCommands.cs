@@ -12,15 +12,13 @@ namespace SynPortScan.Commands;
 public class SynPortScanCommands
 {
     private readonly string _ip;
-    private readonly int _threads;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SynPortScanCommands"/> class.
     /// </summary>
-    public SynPortScanCommands(string ip, int threads)
+    public SynPortScanCommands(string ip)
     {
         _ip = ip;
-        _threads = threads;
     }
 
     /// <summary>
@@ -28,15 +26,13 @@ public class SynPortScanCommands
     /// </summary>
     public async Task ExecuteAsync(CancellationToken ct)
     {
-
-        var semaphoreSlim = new SemaphoreSlim(_threads);
-
         try
         {
             var device = DeviceHelper.SelectDevice();
             DeviceHelper.OpenDevice(device);
             var gatewayIP = DeviceHelper.GetGatewayIP();
             var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIP.ToString(), ct));
+
             // add dots to the mac address
             var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
             // ports range
@@ -44,24 +40,12 @@ public class SynPortScanCommands
 
             Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
 
-            var tasks = ports.Select(async port =>
+            ports.Select(async port =>
             {
-                var task = Task.Run(async () =>
-                {
-                    await semaphoreSlim.WaitAsync();
+                await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac);
 
-                    try
-                    {
-                        await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac);
-                    }
-                    finally
-                    {
-                        semaphoreSlim.Release();
-                    }
-                });
             });
 
-            await Task.WhenAll(tasks);
             device.Close();
         }
         catch (Exception ex)

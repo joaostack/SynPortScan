@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using SharpPcap;
 
 namespace SynPortScan.Core;
@@ -59,11 +60,23 @@ public static class DeviceHelper
         var gateway = allIfaces
             .Where(n => n.OperationalStatus == OperationalStatus.Up)
             .SelectMany(n => n.GetIPProperties().GatewayAddresses)
-            .Select(g => g.Address)
-            .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+            .Select(g => g.Address).FirstOrDefault();
 
         if (gateway == null) throw new Exception("No gateway found!");
 
         return gateway;
+    }
+
+    public static IPAddress GetLocalIP(ILiveDevice device)
+    {
+        var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
+                            .FirstOrDefault(a =>
+                                a.Addr?.ipAddress != null &&
+                                a.Addr.ipAddress.AddressFamily == AddressFamily.InterNetwork)
+                            ?.Addr?.ipAddress;
+
+        if (localIp == null) throw new InvalidOperationException("Local IP address not found.");
+
+        return localIp;
     }
 }

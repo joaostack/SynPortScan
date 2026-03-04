@@ -26,8 +26,7 @@ BY github.com/joaostack";
     /// SynPortScan args.
     /// </summary>
     /// <param name="ip">Target IP</param>
-    /// <param name="threads" >Threads</param>
-    static async Task Main(string ip, int threads)
+    static async Task Main(string ip)
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(ASCII_ART);
@@ -37,12 +36,6 @@ BY github.com/joaostack";
         {
             Console.WriteLine("-?, -h, --help\tShow help and usage information");
             return;
-        }
-
-        // set default threads if params is not specified
-        if (threads <= 0)
-        {
-            threads = 2;
         }
 
         //Check if target is a hostname and convert to IP Address
@@ -62,7 +55,7 @@ BY github.com/joaostack";
             Console.WriteLine($"TARGET: {host}");
 
             var cts = new CancellationTokenSource();
-            var command = new SynPortScanCommands(host.ToString(), threads);
+            var command = new SynPortScanCommands(host.ToString());
             await command.ExecuteAsync(cts.Token);
         }
         catch (Exception ex)
