@@ -34,7 +34,7 @@ public static class PacketBuilder
             // create broadcast arp packet
             var arpPacket = new ArpPacket(
                 ArpOperation.Request,
-                PhysicalAddress.Parse("00-00-00-00-00-00"), //unknown mac
+                PhysicalAddress.Parse("00-00-00-00-00-00"),
                 IPAddress.Parse(targetIp),
                 localMac,
                 localIp
@@ -42,7 +42,7 @@ public static class PacketBuilder
 
             var ethernetPacket = new EthernetPacket(
                 localMac,
-                PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"), // Broadcast MAC
+                PhysicalAddress.Parse("FF-FF-FF-FF-FF-FF"),
                 EthernetType.Arp)
             {
                 PayloadPacket = arpPacket
@@ -87,7 +87,7 @@ public static class PacketBuilder
 
                 };
 
-                await Task.Delay(3000, ct);
+                await Task.Delay(2000, ct);
             }
             catch (OperationCanceledException)
             {
@@ -107,14 +107,17 @@ public static class PacketBuilder
         }
     }
 
-    private static Dictionary<int, string> scannedPorts = new Dictionary<int, string>();
+    private static readonly Dictionary<int, string> scannedPorts = new Dictionary<int, string>();
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, PhysicalAddress gatewayMac)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, bool verbose, PhysicalAddress gatewayMac)
     {
         try
         {
+            if (verbose)
+                Console.WriteLine($"Scanning => {targetPort}");
+
             var random = new Random();
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                         .FirstOrDefault(a =>
@@ -216,7 +219,7 @@ public static class PacketBuilder
             device.Filter = $"tcp and host {targetIp}";
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(3000);
+            await Task.Delay(2000);
         }
         catch (Exception ex)
         {

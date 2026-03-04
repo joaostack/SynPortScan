@@ -26,7 +26,8 @@ BY github.com/joaostack";
     /// SynPortScan args.
     /// </summary>
     /// <param name="ip">Target IP</param>
-    static async Task Main(string ip)
+    /// <param name="verbose">Turn verbose mode on</param>
+    static async Task Main(string ip, bool verbose)
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(ASCII_ART);
@@ -55,7 +56,7 @@ BY github.com/joaostack";
             Console.WriteLine($"TARGET: {host}");
 
             var cts = new CancellationTokenSource();
-            var command = new SynPortScanCommands(host.ToString());
+            var command = new SynPortScanCommands(host.ToString(), verbose);
             await command.ExecuteAsync(cts.Token);
         }
         catch (Exception ex)

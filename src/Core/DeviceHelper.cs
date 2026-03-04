@@ -67,6 +67,9 @@ public static class DeviceHelper
         return gateway;
     }
 
+    /// <summary>
+    /// Get current host IP
+    /// </summary>
     public static IPAddress GetLocalIP(ILiveDevice device)
     {
         var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses

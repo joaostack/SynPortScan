@@ -11,14 +11,16 @@ namespace SynPortScan.Commands;
 /// </summary>
 public class SynPortScanCommands
 {
-    private readonly string _ip;
+    private string IP { get; set; }
+    private bool Verbose { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SynPortScanCommands"/> class.
     /// </summary>
-    public SynPortScanCommands(string ip)
+    public SynPortScanCommands(string ip, bool verbose)
     {
-        _ip = ip;
+        this.IP = ip;
+        this.Verbose = verbose;
     }
 
     /// <summary>
@@ -40,7 +42,7 @@ public class SynPortScanCommands
             Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
 
             foreach (var port in ports)
-                await PacketBuilder.SendSynPacket(device, _ip, port, gatewayMac);
+                await PacketBuilder.SendSynPacket(device, IP, port, Verbose, gatewayMac);
 
             device.Close();
         }
