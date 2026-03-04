@@ -107,7 +107,6 @@ public static class PacketBuilder
         }
     }
 
-    private static readonly Dictionary<int, string> scannedPorts = new Dictionary<int, string>();
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
@@ -115,6 +114,7 @@ public static class PacketBuilder
     {
         try
         {
+            var scannedPorts = new Dictionary<int, string>();
             var random = new Random();
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                         .FirstOrDefault(a =>
