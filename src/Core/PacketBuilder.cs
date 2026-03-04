@@ -80,7 +80,7 @@ public static class PacketBuilder
             device.SendPacket(ethernetPacket);
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(1000);
+            cts.CancelAfter(2000);
 
             try
             {
@@ -182,6 +182,7 @@ public static class PacketBuilder
 
             ethernetPacket2.PayloadPacket = ipPacket2;
 
+            // sniff & handle server response
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
                 var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
@@ -219,12 +220,11 @@ public static class PacketBuilder
             };
 
             // Set BPF Filter
-            //device.Filter = $"tcp and host {targetIp}";
+            device.Filter = $"tcp and host {targetIp}";
 
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(5000);
-            device.StopCapture();
+            await Task.Delay(3000);
         }
         catch (Exception ex)
         {
