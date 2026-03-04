@@ -115,9 +115,6 @@ public static class PacketBuilder
     {
         try
         {
-            if (verbose)
-                Console.WriteLine($"Scanning => {targetPort}");
-
             var random = new Random();
             var localIp = ((SharpPcap.LibPcap.LibPcapLiveDevice)device).Addresses
                         .FirstOrDefault(a =>
@@ -200,8 +197,11 @@ public static class PacketBuilder
                         }
                         else if (tcp.Reset || (tcp.Reset && tcp.Acknowledgment))
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine($"Port {targetPort} is closed.");
+                            if (verbose)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine($"Port {targetPort} is closed.");
+                            }
                             scannedPorts[targetPort] = "closed";
                         }
                         else if (!tcp.Reset && !tcp.Acknowledgment)
