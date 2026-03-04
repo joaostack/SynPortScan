@@ -25,8 +25,8 @@ BY github.com/joaostack";
     /// <summary>
     /// SynPortScan args.
     /// </summary>
-    /// <param name="ip">Target IP</param>
-    /// <param name="verbose">Turn verbose mode on</param>
+    /// <param name="ip">Target host</param>
+    /// <param name="verbose">Turn verbose mode</param>
     static async Task Main(string ip, bool verbose)
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
