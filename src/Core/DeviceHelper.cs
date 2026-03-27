@@ -18,9 +18,7 @@ public static class DeviceHelper
         var devices = CaptureDeviceList.Instance;
 
         if (devices.Count < 1)
-        {
             throw new InvalidOperationException("No devices found! Please connect a network device");
-        }
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine(new string('-', 50));
@@ -43,10 +41,7 @@ public static class DeviceHelper
     /// </summary>
     public static void OpenDevice(ILiveDevice device)
     {
-        if (device == null)
-        {
-            throw new ArgumentNullException(nameof(device), "Device cannot be null.");
-        }
+        if (device == null) throw new ArgumentNullException(nameof(device), "Device cannot be null.");
 
         device.Open(DeviceModes.Promiscuous, 1000);
     }

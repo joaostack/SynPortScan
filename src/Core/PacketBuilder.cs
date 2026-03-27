@@ -79,12 +79,8 @@ public static class PacketBuilder
                     var packet = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
                     var arpPacket = packet.Extract<ArpPacket>();
 
-                    if (arpPacket != null)
-                    {
-                        if (arpPacket.Operation == ArpOperation.Response)
-                            macRes = arpPacket.SenderHardwareAddress.ToString();
-                    }
-
+                    if (arpPacket != null && arpPacket.Operation == ArpOperation.Response)
+                        macRes = arpPacket.SenderHardwareAddress.ToString();
                 };
 
                 await Task.Delay(2000, ct);
