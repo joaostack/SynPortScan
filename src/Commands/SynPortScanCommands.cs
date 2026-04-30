@@ -12,15 +12,17 @@ namespace SynPortScan.Commands;
 public class SynPortScanCommands
 {
     private string IP { get; set; }
+    private string InterfaceName { get; set; }
     private bool Verbose { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SynPortScanCommands"/> class.
     /// </summary>
-    public SynPortScanCommands(string ip, bool verbose)
+    public SynPortScanCommands(string ip, string interfaceName, bool verbose)
     {
         this.IP = ip;
         this.Verbose = verbose;
+        this.InterfaceName = interfaceName;
     }
 
     /// <summary>
@@ -28,7 +30,7 @@ public class SynPortScanCommands
     /// </summary>
     public async Task ExecuteAsync(CancellationToken ct)
     {
-        var device = DeviceHelper.SelectDevice();
+        var device = DeviceHelper.SelectDevice(InterfaceName);
         DeviceHelper.OpenDevice(device);
         var gatewayIP = DeviceHelper.GetGatewayIP();
         var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIP.ToString(), ct));

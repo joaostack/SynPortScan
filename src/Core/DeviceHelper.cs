@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using SharpPcap;
+using SharpPcap.LibPcap;
 
 namespace SynPortScan.Core;
 
@@ -13,27 +14,14 @@ public static class DeviceHelper
     /// <summary>
     /// Selects a network device for packet capture.
     /// </summary>
-    public static ILiveDevice SelectDevice()
+    public static ILiveDevice SelectDevice(string interfaceName)
     {
-        var devices = CaptureDeviceList.Instance;
+        LibPcapLiveDeviceList deviceList = LibPcapLiveDeviceList.Instance;
+        var device = deviceList.FirstOrDefault(dev => dev.Interface?.FriendlyName?.ToLower() == interfaceName);
+        if (device is null)
+            throw new NullReferenceException("Device not found!");
 
-        if (devices.Count < 1)
-            throw new InvalidOperationException("No devices found! Please connect a network device");
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine(new string('-', 50));
-        for (int i = 0; i < devices.Count; i++)
-        {
-            var device = devices[i];
-            Console.WriteLine($"{i}: {device.Description} ({device.Name})");
-        }
-        Console.WriteLine(new string('-', 50));
-
-        Console.Write("Select a device by number: ");
-        int index = int.Parse(Console.ReadLine() ?? "0");
-        Console.ResetColor();
-
-        return devices[index];
+        return device;
     }
 
     /// <summary>
@@ -41,7 +29,7 @@ public static class DeviceHelper
     /// </summary>
     public static void OpenDevice(ILiveDevice device)
     {
-        if (device == null) throw new ArgumentNullException(nameof(device), "Device cannot be null.");
+        if (device is null) throw new ArgumentNullException(nameof(device), "Device cannot be null.");
 
         device.Open(DeviceModes.Promiscuous, 1000);
     }

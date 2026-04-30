@@ -26,8 +26,9 @@ BY github.com/joaostack";
     /// SynPortScan args.
     /// </summary>
     /// <param name="ip">Target host</param>
+    /// <param name="interfaceName">Target device name</param>
     /// <param name="verbose">Turn verbose mode</param>
-    static async Task Main(string ip, bool verbose)
+    static async Task Main(string ip, string interfaceName, bool verbose)
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(ASCII_ART);
@@ -41,9 +42,7 @@ BY github.com/joaostack";
 
         //Check if target is a hostname and convert to IP Address
         if (!IPAddress.TryParse(ip, out var host))
-        {
             host = Dns.GetHostAddresses(ip).FirstOrDefault();
-        }
 
         if (host == null)
         {
@@ -56,7 +55,7 @@ BY github.com/joaostack";
             Console.WriteLine($"TARGET: {host}");
 
             var cts = new CancellationTokenSource();
-            var command = new SynPortScanCommands(host.ToString(), verbose);
+            var command = new SynPortScanCommands(host.ToString(), interfaceName, verbose);
             await command.ExecuteAsync(cts.Token);
         }
         catch (Exception ex)
