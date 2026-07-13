@@ -174,7 +174,7 @@ public static class PacketBuilder
 
         if (!_pendingScans.TryRemove(tcp.DestinationPort, out var scan))
             return;
-
+        
         if (tcp.Synchronize && tcp.Acknowledgment)
         {
             Console.ForegroundColor = ConsoleColor.Green;
@@ -200,7 +200,7 @@ public static class PacketBuilder
         Console.ResetColor();
     }
 
-    private static int _nextPort = 40000;
+    private static int _nextPort = 0;
 
     private static ushort NextSourcePort()
     {
