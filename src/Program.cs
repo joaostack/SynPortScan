@@ -56,7 +56,7 @@ BY github.com/joaostack";
 
             var cts = new CancellationTokenSource();
             var command = new SynPortScanCommands(host.ToString(), interfaceName, verbose);
-            await command.ExecuteAsync(cts.Token);
+            await command.ExecuteAsync();
         }
         catch (Exception ex)
         {
