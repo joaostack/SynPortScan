@@ -106,7 +106,7 @@ public static class PacketBuilder
     /// <summary>
     /// Sends a SYN packet to the target IP and port.
     /// </summary>
-    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, bool verbose, PhysicalAddress gatewayMac)
+    public static async Task SendSynPacket(ILiveDevice device, string targetIp, int targetPort, bool verbose, PhysicalAddress gatewayMac, CancellationToken cancellationToken)
     {
         try
         {
@@ -174,7 +174,6 @@ public static class PacketBuilder
             device.OnPacketArrival += (object sender, PacketCapture e) =>
             {
                 var packet = Packet.ParsePacket(e.GetPacket().LinkLayerType, e.GetPacket().Data);
-                var eth = packet.Extract<EthernetPacket>();
                 var tcp = packet.Extract<TcpPacket>();
                 var ip = packet.Extract<IPv4Packet>();
 
@@ -182,7 +181,7 @@ public static class PacketBuilder
                 {
                     if (!scannedPorts.ContainsKey(targetPort))
                     {
-                        if (tcp.Synchronize && tcp.Acknowledgment)
+                        if (tcp is { Synchronize: true, Acknowledgment: true })
                         {
                             Console.ForegroundColor = ConsoleColor.Green;
                             Console.WriteLine($"Port {targetPort} is open.");
@@ -191,7 +190,7 @@ public static class PacketBuilder
                             // close connection with RST flag
                             device.SendPacket(ethernetPacket2);
                         }
-                        else if (tcp.Reset || (tcp.Reset && tcp.Acknowledgment))
+                        else if (tcp.Reset || tcp is { Reset: true, Acknowledgment: true })
                         {
                             if (verbose)
                             {
@@ -200,7 +199,7 @@ public static class PacketBuilder
                             }
                             scannedPorts[targetPort] = "closed";
                         }
-                        else if (!tcp.Reset && !tcp.Acknowledgment)
+                        else if (tcp is { Reset: false, Acknowledgment: false })
                         {
                             Console.ForegroundColor = ConsoleColor.Yellow;
                             Console.WriteLine($"Port {targetPort} is filtered.");
@@ -212,10 +211,10 @@ public static class PacketBuilder
                 Console.ResetColor();
             };
 
-            device.Filter = $"tcp and host {targetIp}";
+            //device.Filter = $"tcp and host {targetIp}";
             device.StartCapture();
             device.SendPacket(ethernetPacket);
-            await Task.Delay(100);
+            await Task.Delay(100, cancellationToken);
         }
         catch (Exception ex)
         {

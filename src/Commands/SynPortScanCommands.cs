@@ -32,17 +32,17 @@ public class SynPortScanCommands
     {
         var device = DeviceHelper.SelectDevice(InterfaceName);
         DeviceHelper.OpenDevice(device);
-        var gatewayIP = DeviceHelper.GetGatewayIP();
-        var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIP.ToString(), ct));
+        var gatewayIp = DeviceHelper.GetGatewayIP();
+        var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIp.ToString(), ct));
 
         // add dots to the mac address
-        var targetGatewayMacString = string.Join(":", gatewayMac.GetAddressBytes().Select(b => b.ToString("X2")));
         var ports = Enumerable.Range(0, 65535);
 
         Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
 
-        foreach (var port in ports)
-            await PacketBuilder.SendSynPacket(device, IP, port, Verbose, gatewayMac);
+        await Parallel.ForEachAsync(ports,
+            async (port, cancellationToken) =>
+                await PacketBuilder.SendSynPacket(device, IP, port, Verbose, gatewayMac, cancellationToken));
 
         device.Close();
         Console.ResetColor();
