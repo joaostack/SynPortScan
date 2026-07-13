@@ -11,7 +11,7 @@ namespace SynPortScan.Commands;
 /// </summary>
 public class SynPortScanCommands
 {
-    private string IP { get; set; }
+    private string Ip { get; set; }
     private string InterfaceName { get; set; }
     private bool Verbose { get; set; }
 
@@ -20,7 +20,7 @@ public class SynPortScanCommands
     /// </summary>
     public SynPortScanCommands(string ip, string interfaceName, bool verbose)
     {
-        this.IP = ip;
+        this.Ip = ip;
         this.Verbose = verbose;
         this.InterfaceName = interfaceName;
     }
@@ -28,22 +28,35 @@ public class SynPortScanCommands
     /// <summary>
     /// Scans a specific port on a target host using SYN scan.
     /// </summary>
-    public async Task ExecuteAsync(CancellationToken ct)
+    public async Task ExecuteAsync()
     {
         var device = DeviceHelper.SelectDevice(InterfaceName);
         DeviceHelper.OpenDevice(device);
         var gatewayIp = DeviceHelper.GetGatewayIP();
-        var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIp.ToString(), ct));
+        var gatewayMac = PhysicalAddress.Parse(await PacketBuilder.GetMacFromIP(device, gatewayIp.ToString()));
 
-        // add dots to the mac address
-        var ports = Enumerable.Range(0, 65535);
+        device.Filter = $"tcp and host {Ip}";
+        device.OnPacketArrival += PacketBuilder.PacketArrival;
+        device.StartCapture();
 
         Console.WriteLine($"[{DateTime.UtcNow}] - Scanning...");
 
-        await Parallel.ForEachAsync(ports,
-            async (port, cancellationToken) =>
-                await PacketBuilder.SendSynPacket(device, IP, port, Verbose, gatewayMac, cancellationToken));
+        var ct = new CancellationTokenSource();
 
+        var ports = Enumerable.Range(1, 65535);
+        var tasks = ports
+            .Select(port => PacketBuilder.SendSynPacket(
+                device,
+                Ip,
+                port,
+                Verbose,
+                gatewayMac,
+                ct.Token));
+
+        await Task.WhenAll(tasks);
+        
+        device.OnPacketArrival -= PacketBuilder.PacketArrival;
+        device.StopCapture();
         device.Close();
         Console.ResetColor();
     }
