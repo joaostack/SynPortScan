@@ -1,4 +1,6 @@
-﻿namespace SynPortScan;
+﻿using System.Net.Sockets;
+
+namespace SynPortScan;
 
 using System;
 using System.Net;
@@ -42,7 +44,7 @@ BY github.com/joaostack";
 
         //Check if target is a hostname and convert to IP Address
         if (!IPAddress.TryParse(ip, out var host))
-            host = Dns.GetHostAddresses(ip).FirstOrDefault();
+            host = Dns.GetHostAddresses(ip).FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
 
         if (host == null)
         {
@@ -55,7 +57,7 @@ BY github.com/joaostack";
             Console.WriteLine($"TARGET: {host}");
 
             var cts = new CancellationTokenSource();
-            var command = new SynPortScanCommands(host.ToString(), interfaceName, verbose);
+            var command = new SynPortScanCommands(ip.ToString(), interfaceName, verbose);
             await command.ExecuteAsync();
         }
         catch (Exception ex)
